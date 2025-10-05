@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "539098766919",
+    "project_id": "healthshield254",
+    "storage_bucket": "healthshield254.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:539098766919:android:8ef543ccdb26d2e57f9b62",
+        "android_client_info": {
+          "package_name": "com.triple7.healthshield254"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPWrPIxqUohF8zHcSeMxiyhDPu4NQ50uU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
