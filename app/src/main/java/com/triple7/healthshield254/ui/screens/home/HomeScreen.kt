@@ -5,29 +5,40 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.triple7.healthshield254.R
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.navigation.ROUT_CROWDSOURCING
+import com.navigation.ROUT_EDUCATIONALHUB
+import com.navigation.ROUT_HOTSPOTMAP
+import com.navigation.ROUT_PROFILESETTINS
+import com.navigation.ROUT_VERIFICATIONRECORDS
+import com.triple7.healthshield254.R
 import com.triple7.healthshield254.ui.theme.triple777
 import com.triple7.healthshield254.ui.theme.tripleSeven
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import androidx.compose.animation.core.*
+import androidx.compose.ui.graphics.Color
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -119,11 +130,14 @@ fun HomeScreen(navController: NavController) {
                 }
             }
         ) { paddingValues ->
+            val scrollState = rememberScrollState()
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .verticalScroll(scrollState),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Main Action Buttons
@@ -144,7 +158,7 @@ fun HomeScreen(navController: NavController) {
                 }
 
                 OutlinedButton(
-                    onClick = { /* Report Action */ },
+                    onClick = {navController.navigate(ROUT_CROWDSOURCING)},
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
@@ -164,16 +178,56 @@ fun HomeScreen(navController: NavController) {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        QuickTile("Hotspot Map", Icons.Default.MoreVert)
-                        QuickTile("Education Hub", Icons.Default.AddCircle)
+                        Button(
+                            onClick = {navController.navigate(ROUT_HOTSPOTMAP)},
+                            shape = RoundedCornerShape(62.dp),
+                            colors = ButtonDefaults.buttonColors(tripleSeven),
+                            modifier = Modifier.weight(1f).padding(end = 8.dp)
+                        ) {
+                            Icon(Icons.Default.LocationOn, contentDescription = "Hotspot Map")
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Hotspot Map")
+                        }
+
+                        Button(
+                            onClick = {navController.navigate(ROUT_EDUCATIONALHUB)},
+                            shape = RoundedCornerShape(62.dp),
+                            colors = ButtonDefaults.buttonColors(tripleSeven),
+                            modifier = Modifier.weight(1f).padding(start = 8.dp)
+                        ) {
+                            Icon(Icons.Default.AddCircle, contentDescription = "Education Hub")
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Education Hub")
+                        }
                     }
+
                     Spacer(modifier = Modifier.height(12.dp))
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        QuickTile("Crowdsourcing", Icons.Default.Person)
-                        QuickTile("History", Icons.Default.Info)
+                        Button(
+                            onClick = {navController.navigate(ROUT_PROFILESETTINS)},
+                            shape = RoundedCornerShape(62.dp),
+                            colors = ButtonDefaults.buttonColors(tripleSeven),
+                            modifier = Modifier.weight(1f).padding(end = 8.dp)
+                        ) {
+                            Icon(Icons.Default.Person, contentDescription = "Profile")
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Profile")
+                        }
+
+                        Button(
+                            onClick = {navController.navigate(ROUT_VERIFICATIONRECORDS)},
+                            shape = RoundedCornerShape(62.dp),
+                            colors = ButtonDefaults.buttonColors(tripleSeven),
+                            modifier = Modifier.weight(1f).padding(start = 8.dp)
+                        ) {
+                            Icon(Icons.Default.Info, contentDescription = "History")
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Verification Records")
+                        }
                     }
                 }
 
@@ -195,7 +249,8 @@ fun HomeScreen(navController: NavController) {
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
                         ) {
                             Box(
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier
+                                    .fillMaxSize()
                                     .background(color = tripleSeven),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -212,13 +267,61 @@ fun HomeScreen(navController: NavController) {
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // --- IMAGE CARD AT THE BOTTOM ---
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = tripleSeven)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.nurse),
+                        contentDescription = "Nurse Image",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // --- RUNNING TEXT BELOW IMAGE ---
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(30.dp)
+                        .background(tripleSeven),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    val infiniteTransition = rememberInfiniteTransition()
+                    val translateX by infiniteTransition.animateFloat(
+                        initialValue = 1000f,
+                        targetValue = -1000f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(durationMillis = 15000, easing = LinearEasing),
+                            repeatMode = RepeatMode.Restart
+                        )
+                    )
+
+                    Text(
+                        text = " Important notice: Always check medicine authenticity!",
+                        modifier = Modifier.offset { IntOffset(translateX.roundToInt(), 0) },
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
+                }
+
             }
         }
     }
 }
 
 @Composable
-fun QuickTile(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+fun QuickTile(title: String, icon: ImageVector) {
     Card(
         modifier = Modifier
             .width(160.dp)
@@ -237,19 +340,15 @@ fun QuickTile(title: String, icon: androidx.compose.ui.graphics.vector.ImageVect
 
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "CrowdSourcing",
+                text = "",
                 fontWeight = FontWeight.SemiBold
-                )
+            )
         }
     }
 }
 
-
 @Composable
 @Preview(showBackground = true)
-
 fun HomeScreenPreview(){
-
     HomeScreen(navController = rememberNavController())
-
 }
