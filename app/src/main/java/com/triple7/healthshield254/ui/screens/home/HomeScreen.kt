@@ -32,10 +32,8 @@ import com.navigation.ROUT_HOTSPOTMAP
 import com.navigation.ROUT_PROFILESETTINS
 import com.navigation.ROUT_VERIFICATIONRECORDS
 import com.triple7.healthshield254.R
-import com.triple7.healthshield254.ui.theme.triple777
 import com.triple7.healthshield254.ui.theme.tripleSeven
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import com.triple7.healthshield254.ui.theme.triple777
 import androidx.compose.animation.core.*
 import androidx.compose.ui.graphics.Color
 import kotlin.math.roundToInt
@@ -44,7 +42,6 @@ import kotlin.math.roundToInt
 @Composable
 fun HomeScreen(navController: NavController) {
     var isDarkTheme by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
 
     MaterialTheme(
         colorScheme = if (isDarkTheme) darkColorScheme() else lightColorScheme()
@@ -57,13 +54,10 @@ fun HomeScreen(navController: NavController) {
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            // App logo
                             Image(
                                 painter = painterResource(id = R.drawable.medicalinsurance),
                                 contentDescription = "App Logo",
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .padding(end = 8.dp)
+                                modifier = Modifier.size(32.dp).padding(end = 8.dp)
                             )
                             Text(
                                 text = "MediCheck",
@@ -71,23 +65,9 @@ fun HomeScreen(navController: NavController) {
                                 fontSize = 18.sp,
                                 modifier = Modifier.weight(1f)
                             )
-
-                            // Search bar icon
                             IconButton(onClick = { /* Handle search */ }) {
                                 Icon(Icons.Default.Search, contentDescription = "Search")
                             }
-
-                            // Dark/Light mode toggle
-                            class ThemeViewModel : ViewModel() {
-                                private val _isDarkTheme = MutableStateFlow(false)
-                                val isDarkTheme: StateFlow<Boolean> = _isDarkTheme
-
-                                fun toggleTheme() {
-                                    _isDarkTheme.value = !_isDarkTheme.value
-                                }
-                            }
-
-                            // Notifications
                             IconButton(onClick = { /* Handle notifications */ }) {
                                 Icon(Icons.Default.Notifications, contentDescription = "Notifications")
                             }
@@ -100,38 +80,37 @@ fun HomeScreen(navController: NavController) {
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.AccountBox, contentDescription = "AccountBox") },
                         selected = true,
-                        colors =  NavigationBarItemDefaults.colors(tripleSeven),
-                        onClick = {navController.navigate(ROUT_CROWDSOURCING)}
+                        colors = NavigationBarItemDefaults.colors(tripleSeven),
+                        onClick = { navController.navigate(ROUT_CROWDSOURCING) }
                     )
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Scan") },
                         selected = false,
-                        colors =  NavigationBarItemDefaults.colors(tripleSeven),
+                        colors = NavigationBarItemDefaults.colors(tripleSeven),
                         onClick = {}
                     )
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.MoreVert, contentDescription = "Map") },
                         selected = false,
-                        colors =  NavigationBarItemDefaults.colors(tripleSeven),
+                        colors = NavigationBarItemDefaults.colors(tripleSeven),
                         onClick = {}
                     )
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.Person, contentDescription = "Community") },
                         selected = false,
-                        colors =  NavigationBarItemDefaults.colors(tripleSeven),
+                        colors = NavigationBarItemDefaults.colors(tripleSeven),
                         onClick = {}
                     )
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.Face, contentDescription = "Profile") },
                         selected = false,
-                        colors =  NavigationBarItemDefaults.colors(tripleSeven),
+                        colors = NavigationBarItemDefaults.colors(tripleSeven),
                         onClick = {}
                     )
                 }
             }
         ) { paddingValues ->
             val scrollState = rememberScrollState()
-
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -142,9 +121,7 @@ fun HomeScreen(navController: NavController) {
             ) {
                 // Main Action Buttons
                 Button(
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = tripleSeven
-                    ),
+                    colors = ButtonDefaults.buttonColors(containerColor = tripleSeven),
                     onClick = { navController.navigate("camera_screen") },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -158,7 +135,7 @@ fun HomeScreen(navController: NavController) {
                 }
 
                 OutlinedButton(
-                    onClick = {navController.navigate(ROUT_CROWDSOURCING)},
+                    onClick = { navController.navigate(ROUT_CROWDSOURCING) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
@@ -172,17 +149,22 @@ fun HomeScreen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Quick Access Tiles (2x2 Grid)
+                // Quick Access Tiles (2x2 Grid) - Uniform size
                 Column {
+                    val buttonModifier = Modifier
+                        .weight(1f)
+                        .height(60.dp)
+                        .padding(horizontal = 4.dp)
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Button(
-                            onClick = {navController.navigate(ROUT_HOTSPOTMAP)},
+                            onClick = { navController.navigate(ROUT_HOTSPOTMAP) },
                             shape = RoundedCornerShape(62.dp),
                             colors = ButtonDefaults.buttonColors(tripleSeven),
-                            modifier = Modifier.weight(1f).padding(end = 8.dp)
+                            modifier = buttonModifier
                         ) {
                             Icon(Icons.Default.LocationOn, contentDescription = "Hotspot Map")
                             Spacer(modifier = Modifier.width(6.dp))
@@ -190,10 +172,10 @@ fun HomeScreen(navController: NavController) {
                         }
 
                         Button(
-                            onClick = {navController.navigate(ROUT_EDUCATIONALHUB)},
+                            onClick = { navController.navigate(ROUT_EDUCATIONALHUB) },
                             shape = RoundedCornerShape(62.dp),
                             colors = ButtonDefaults.buttonColors(tripleSeven),
-                            modifier = Modifier.weight(1f).padding(start = 8.dp)
+                            modifier = buttonModifier
                         ) {
                             Icon(Icons.Default.AddCircle, contentDescription = "Education Hub")
                             Spacer(modifier = Modifier.width(6.dp))
@@ -208,10 +190,10 @@ fun HomeScreen(navController: NavController) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Button(
-                            onClick = {navController.navigate(ROUT_PROFILESETTINS)},
+                            onClick = { navController.navigate(ROUT_PROFILESETTINS) },
                             shape = RoundedCornerShape(62.dp),
                             colors = ButtonDefaults.buttonColors(tripleSeven),
-                            modifier = Modifier.weight(1f).padding(end = 8.dp)
+                            modifier = buttonModifier
                         ) {
                             Icon(Icons.Default.Person, contentDescription = "Profile")
                             Spacer(modifier = Modifier.width(6.dp))
@@ -219,10 +201,10 @@ fun HomeScreen(navController: NavController) {
                         }
 
                         Button(
-                            onClick = {navController.navigate(ROUT_VERIFICATIONRECORDS)},
+                            onClick = { navController.navigate(ROUT_VERIFICATIONRECORDS) },
                             shape = RoundedCornerShape(62.dp),
                             colors = ButtonDefaults.buttonColors(tripleSeven),
-                            modifier = Modifier.weight(1f).padding(start = 8.dp)
+                            modifier = buttonModifier
                         ) {
                             Icon(Icons.Default.Info, contentDescription = "History")
                             Spacer(modifier = Modifier.width(6.dp))
@@ -270,7 +252,7 @@ fun HomeScreen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // --- IMAGE CARD AT THE BOTTOM ---
+                // Image Card
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -288,7 +270,7 @@ fun HomeScreen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // --- RUNNING TEXT BELOW IMAGE ---
+                // Running Text Banner
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -314,41 +296,13 @@ fun HomeScreen(navController: NavController) {
                         color = Color.Black
                     )
                 }
-
             }
         }
     }
 }
 
 @Composable
-fun QuickTile(title: String, icon: ImageVector) {
-    Card(
-        modifier = Modifier
-            .width(160.dp)
-            .height(100.dp)
-            .clickable { },
-        colors = CardDefaults.cardColors(containerColor = tripleSeven)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(icon, contentDescription = title, modifier = Modifier.size(32.dp))
-
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "",
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-    }
-}
-
-@Composable
 @Preview(showBackground = true)
-fun HomeScreenPreview(){
+fun HomeScreenPreview() {
     HomeScreen(navController = rememberNavController())
 }

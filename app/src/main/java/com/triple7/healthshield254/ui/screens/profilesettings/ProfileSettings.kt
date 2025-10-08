@@ -1,5 +1,6 @@
 package com.triple7.healthshield254.ui.screens.profilesettings
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,6 +10,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
+import androidx.compose.material3.CheckboxDefaults.colors
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,6 +21,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.triple7.healthshield254.ui.theme.triple777
+import com.triple7.healthshield254.ui.theme.tripleSeven
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileSettingsScreen(navController: NavController? = null) {
@@ -32,13 +37,14 @@ fun ProfileSettingsScreen(navController: NavController? = null) {
             TopAppBar(
                 title = { Text("Profile & Settings") },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                    containerColor = triple777
                 )
             )
         }
     ) { padding ->
         Column(
             modifier = Modifier
+                .background(color = tripleSeven)
                 .padding(padding)
                 .fillMaxSize()
                 .padding(16.dp),
@@ -101,14 +107,14 @@ fun ProfileSettingsScreen(navController: NavController? = null) {
             Button(
                 onClick = { /* Handle logout logic */ },
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
+                colors = ButtonDefaults.buttonColors(containerColor = triple777),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Log Out", color = Color.White)
             }
 
             Spacer(Modifier.height(12.dp))
-            Text("Version 1.0.0", color = Color.Gray, style = MaterialTheme.typography.labelSmall)
+            Text("Version 1.0.0", color = Color.Black, style = MaterialTheme.typography.labelSmall)
         }
     }
 }

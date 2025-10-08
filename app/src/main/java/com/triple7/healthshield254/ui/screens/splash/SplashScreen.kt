@@ -26,7 +26,7 @@ fun SplashScreen(navController: NavController) {
     // Delay navigation
     LaunchedEffect(Unit) {
         delay(2000)
-        navController.navigate("home") { // change "home" to ROUT_HOME if constant exists
+        navController.navigate("RegisterScreen") { //After splash, navigate to registration screen
             popUpTo("splash") { inclusive = true }
         }
     }
@@ -34,7 +34,7 @@ fun SplashScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(color = Color.LightGray),
+            .background(color = tripleSeven),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {

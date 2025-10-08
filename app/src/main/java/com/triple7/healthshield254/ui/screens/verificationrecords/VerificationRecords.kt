@@ -133,12 +133,12 @@ fun ScanRecordCard(record: ScanRecord) {
                 )
                 Text(
                     text = "Status: ${record.status}",
-                    color = statusColor,
+                    color = Color.Black,
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
                     text = "AI Confidence: ${record.confidence}%",
-                    color = Color.Gray,
+                    color = Color.Black,
                     fontSize = 13.sp
                 )
                 Text(
@@ -146,7 +146,7 @@ fun ScanRecordCard(record: ScanRecord) {
                         SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
                             .format(Date(record.date))
                     }",
-                    color = Color.Gray,
+                    color = Color.Black,
                     fontSize = 12.sp
                 )
             }
