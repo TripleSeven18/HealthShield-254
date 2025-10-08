@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.vision.common)
     implementation(libs.play.services.mlkit.text.recognition.common)
+    implementation(libs.play.services.mlkit.text.recognition)
     //Firebase End
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -80,6 +81,14 @@ dependencies {
     //End of Lottie
 
     implementation("io.coil-kt:coil-compose:2.4.0")
+
+
+    //Camera
+    implementation("androidx.camera:camera-core:1.3.4")
+    implementation("androidx.camera:camera-camera2:1.3.4")
+    implementation("androidx.camera:camera-lifecycle:1.3.4")
+    implementation("androidx.camera:camera-view:1.3.4")
+    implementation("androidx.camera:camera-extensions:1.3.4")
 
 
 

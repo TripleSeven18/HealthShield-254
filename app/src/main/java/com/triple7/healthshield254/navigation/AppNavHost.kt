@@ -1,4 +1,4 @@
-package com.navigation
+package com.triple7.healthshield254.navigation
 
 import LoginScreen
 import androidx.compose.runtime.Composable
@@ -7,12 +7,14 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.triple7.digconnectke254.ui.screens.home.HomeScreen
 import com.triple7.healthshield254.ui.screens.auth.RegisterScreen
 import com.triple7.healthshield254.ui.screens.crowdsourcinghub.CrowdsourcingHubScreen
 import com.triple7.healthshield254.ui.screens.educationalhub.EducationalHubScreen
+import com.triple7.healthshield254.ui.screens.home.HomeScreen
 import com.triple7.healthshield254.ui.screens.hotspotmap.HotspotMapScreen
 import com.triple7.healthshield254.ui.screens.profilesettings.ProfileSettingsScreen
+import com.triple7.healthshield254.ui.screens.reportmedicine.ReportScreen
+import com.triple7.healthshield254.ui.screens.reportmedicine.ViewReport
 import com.triple7.healthshield254.ui.screens.splash.SplashScreen
 import com.triple7.healthshield254.ui.screens.verificationrecords.ScanHistoryScreen
 import com.triple7.healthshield254.ui.screens.verify.ScanVerifyScreen
@@ -61,5 +63,16 @@ fun AppNavHost(
         composable(ROUT_LOGIN) {
             LoginScreen(navController)
         }
+
+
+
+        composable(ROUT_SENDREPORT) {
+            ReportScreen(navController)
+        }
+
+        composable(ROUT_VIEWREPORT) {
+            ViewReport(navController)
+        }
+
     }
 }

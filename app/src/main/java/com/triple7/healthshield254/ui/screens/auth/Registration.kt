@@ -23,7 +23,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
@@ -35,8 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.navigation.ROUT_LOGIN
 import com.triple7.healthshield254.R
+import com.triple7.healthshield254.navigation.ROUT_LOGIN
 import com.triple7.healthshield254.ui.theme.triple777
 import com.triple7.healthshield254.ui.theme.tripleSeven
 
@@ -152,23 +151,23 @@ fun RegisterScreen(navController: NavController) {
                     visualTransformation = PasswordVisualTransformation()
                 )
                 Spacer(modifier = Modifier.height(10.dp))
-
+                val context = LocalContext.current
+                val authViewModel = AuthViewModel(navController, context)
                 Button(
                     onClick = {
-                        val ok = authViewModel.signup(username, email, password, confirmpassword)
-                        if (ok) {
-                            // navigate only if signup returned success
-                            navController.navigate(ROUT_LOGIN)
-                        }
+
+                        navController.navigate(ROUT_LOGIN)
                     },
-                    shape = RoundedCornerShape(size = 10.dp),
-                    colors = ButtonDefaults.buttonColors(tripleSeven),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 20.dp, end = 20.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(triple777),
+                    modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp)
                 ) {
-                    Text(text = "Sign Up")
+                    Text(text = "Create An Account")
                 }
+
+
+
+
                 Spacer(modifier = Modifier.height(10.dp))
 
                 TextButton(onClick = { navController.navigate(ROUT_LOGIN) }) {

@@ -18,16 +18,15 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.navigation.ROUT_HOME
-import com.navigation.ROUT_REGISTER
 import com.triple7.healthshield254.R
-import com.triple7.healthshield254.ui.screens.auth.AuthViewModel
+import com.triple7.healthshield254.data.AuthViewModel
+import com.triple7.healthshield254.navigation.ROUT_HOME
+import com.triple7.healthshield254.navigation.ROUT_REGISTER
 import com.triple7.healthshield254.ui.theme.tripleSeven
 
 @Composable
@@ -115,19 +114,16 @@ fun LoginScreen(navController: NavHostController) {
                 )
                 //End of Password
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                TextButton(onClick = {navController.navigate(ROUT_REGISTER)} ) {
-                    Text(
-                        text = "Don't have an account? Sign Up"
-                    )
-                }
-                Spacer(modifier = Modifier.height(24.dp))
+
+
 
                 val context = LocalContext.current
                 val authViewModel = AuthViewModel(navController, context)
 
                 TextButton(onClick = {
+                    authViewModel.login(email, password)
                     navController.navigate(ROUT_HOME)
                 }) {
                     Text(
@@ -137,6 +133,33 @@ fun LoginScreen(navController: NavHostController) {
                     )
 
                 }
+
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+
+
+
+
+                TextButton(onClick = {navController.navigate(ROUT_REGISTER)} ) {
+                    Text(
+                        text = "Don't have an account? Sign Up"
+                    )
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+
+
+
+
+
+
+
+
+
+
+
+
+
             }
         }
     }

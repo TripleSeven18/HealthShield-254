@@ -1,4 +1,4 @@
-package com.navigation
+package com.triple7.healthshield254.navigation
 
 const val ROUT_HOME = "home"
 const val ROUT_SPLASH = "splash"
@@ -11,3 +11,5 @@ const val ROUT_PROFILESETTINS= "ProfileSettingsScreen"
 const val ROUT_VERIFICATIONRECORDS= "ScanHistoryScreen"
 const val ROUT_REGISTER= "RegisterScreen"
 const val ROUT_LOGIN= "LoginScreen"
+const val ROUT_SENDREPORT= "sendreport"
+const val ROUT_VIEWREPORT= "viewreport"

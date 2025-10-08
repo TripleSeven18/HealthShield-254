@@ -16,6 +16,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.airbnb.lottie.compose.*
 import com.triple7.healthshield254.R
+import com.triple7.healthshield254.navigation.ROUT_REGISTER
 import com.triple7.healthshield254.ui.theme.tripleSeven
 import kotlinx.coroutines.delay
 
@@ -26,7 +27,7 @@ fun SplashScreen(navController: NavController) {
     // Delay navigation
     LaunchedEffect(Unit) {
         delay(2000)
-        navController.navigate("RegisterScreen") { //After splash, navigate to registration screen
+        navController.navigate(ROUT_REGISTER) { //After splash, navigate to registration screen
             popUpTo("splash") { inclusive = true }
         }
     }
@@ -71,3 +72,20 @@ fun SplashScreen(navController: NavController) {
 fun SplashScreenPreview() {
     SplashScreen(rememberNavController())
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
