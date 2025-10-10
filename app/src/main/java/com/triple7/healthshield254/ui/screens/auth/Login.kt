@@ -1,3 +1,5 @@
+package com.triple7.healthshield254.ui.screens.auth
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -18,6 +20,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,6 +36,10 @@ import com.triple7.healthshield254.ui.theme.tripleSeven
 fun LoginScreen(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) } // For hide/show password
+
+    val context = LocalContext.current
+    val authViewModel = AuthViewModel(navController, context)
 
     Column(
         modifier = Modifier
@@ -48,32 +55,35 @@ fun LoginScreen(navController: NavHostController) {
         Image(
             painter = painterResource(id = R.drawable.medicalinsurance),
             contentDescription = "sikiafiti",
-            modifier = Modifier.size(width = 200.dp, height = 250.dp).clip(shape = RoundedCornerShape(10.dp)),
+            modifier = Modifier
+                .size(width = 200.dp, height = 250.dp)
+                .clip(shape = RoundedCornerShape(10.dp)),
         )
 
         Spacer(modifier = Modifier.height(10.dp))
+
         Text(
-            text = "HealhShield",
+            text = "HealthShield",
             fontSize = 40.sp,
             fontFamily = FontFamily.Cursive,
             fontWeight = FontWeight.Bold,
             color = Color.White
         )
+
         Spacer(modifier = Modifier.width(30.dp))
 
         Text(
             text = "Welcome back",
             color = Color.White
-
         )
 
         Spacer(modifier = Modifier.height(10.dp))
 
         Card(
             modifier = Modifier
-                .fillMaxWidth(0.85f) // 85% of screen width
-                .height(400.dp), // adjust height as needed
-            shape = RoundedCornerShape(topStart = 60.dp, topEnd = 60.dp, bottomStart = 60.dp, bottomEnd = 60.dp)
+                .fillMaxWidth(0.85f)
+                .height(400.dp),
+            shape = RoundedCornerShape(60.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -82,45 +92,48 @@ fun LoginScreen(navController: NavHostController) {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-//Email
+
+                // Email
                 OutlinedTextField(
                     value = email,
-                    onValueChange = {email = it},
+                    onValueChange = { email = it },
                     modifier = Modifier.width(360.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = tripleSeven,
                         unfocusedLeadingIconColor = tripleSeven
                     ),
                     leadingIcon = { Icon(imageVector = Icons.Default.Email, contentDescription = "Email") },
-                    label = {Text(text = "Email")},
+                    label = { Text(text = "Email") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                 )
-                //End of Email
+
                 Spacer(modifier = Modifier.height(10.dp))
 
-                //Password
+                // Password with custom hide/show icon
                 OutlinedTextField(
                     value = password,
-                    onValueChange = {password = it},
+                    onValueChange = { password = it },
                     modifier = Modifier.width(360.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = tripleSeven,
                         unfocusedLeadingIconColor = tripleSeven
                     ),
                     leadingIcon = { Icon(imageVector = Icons.Default.Lock, contentDescription = "lock") },
-                    label = {Text(text = "Password")},
+                    label = { Text(text = "Password") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    visualTransformation = PasswordVisualTransformation()
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            val image = if (passwordVisible)
+                                painterResource(id = R.drawable.ic_eye_open) // your custom "hide" icon
+                            else
+                                painterResource(id = R.drawable.ic_eye_open)   // your custom "show" icon
+                            Icon(painter = image, contentDescription = "Toggle password visibility")
+                        }
+                    }
                 )
-                //End of Password
 
                 Spacer(modifier = Modifier.height(10.dp))
-
-
-
-
-                val context = LocalContext.current
-                val authViewModel = AuthViewModel(navController, context)
 
                 TextButton(onClick = {
                     authViewModel.login(email, password)
@@ -129,44 +142,25 @@ fun LoginScreen(navController: NavHostController) {
                     Text(
                         text = "Login",
                         color = tripleSeven
-
                     )
-
                 }
-
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-
-
-
-
-                TextButton(onClick = {navController.navigate(ROUT_REGISTER)} ) {
+                TextButton(onClick = { navController.navigate(ROUT_REGISTER) }) {
                     Text(
                         text = "Don't have an account? Sign Up"
                     )
                 }
+
                 Spacer(modifier = Modifier.height(24.dp))
-
-
-
-
-
-
-
-
-
-
-
-
-
             }
         }
     }
 }
 
-@Composable
 @Preview(showBackground = true)
-fun LoginScreenPreview(){
+@Composable
+fun LoginScreenPreview() {
     LoginScreen(rememberNavController())
 }

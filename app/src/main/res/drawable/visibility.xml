@@ -1,0 +1,15 @@
+<animated-selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Hidden password state -->
+    <item
+        android:id="@+id/password_hidden"
+        android:drawable="@drawable/ic_eye_off"
+        android:state_checked="false"/>
+
+    <!-- Visible password state -->
+    <item
+        android:id="@+id/password_visible"
+        android:drawable="@drawable/ic_eye_open"
+        android:state_checked="true"/>
+</animated-selector>
+
+

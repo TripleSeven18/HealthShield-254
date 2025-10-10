@@ -4,14 +4,20 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.airbnb.lottie.compose.*
@@ -24,28 +30,23 @@ import kotlinx.coroutines.delay
 @Composable
 fun SplashScreen(navController: NavController) {
 
-    // Delay navigation
+    // Auto navigate to Register screen after delay
     LaunchedEffect(Unit) {
-        delay(2000)
-        navController.navigate(ROUT_REGISTER) { //After splash, navigate to registration screen
+        delay(3000)
+        navController.navigate(ROUT_REGISTER) {
             popUpTo("splash") { inclusive = true }
         }
     }
 
-    Column(
+    // Fullscreen Layout
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(color = tripleSeven),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .background(tripleSeven),
+        contentAlignment = Alignment.Center
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.img),
-            contentDescription = "splash",
-            modifier = Modifier.size(width = 200.dp, height = 250.dp)
-        )
 
-        // Lottie Animation
+        // Background Lottie animation (soft fade-in)
         val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.lottie))
         val progress by animateLottieCompositionAsState(
             composition = composition,
@@ -55,37 +56,75 @@ fun SplashScreen(navController: NavController) {
         LottieAnimation(
             composition = composition,
             progress = progress,
-            modifier = Modifier.size(300.dp)
+            modifier = Modifier
+                .fillMaxSize(0.9f)
+                .align(Alignment.Center)
         )
 
-        Spacer(modifier = Modifier.height(60.dp))
+        // Foreground content
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
-        // Progress Indicator
-        LinearProgressIndicator(
-            color = tripleSeven
-        )
+            Spacer(modifier = Modifier.height(30.dp))
+
+            // App logo
+            Image(
+                painter = painterResource(id = R.drawable.medicalinsurance), // Replace with your logo
+                contentDescription = "HealthShield Logo",
+                modifier = Modifier
+                    .size(120.dp)
+                    .shadow(10.dp, shape = CircleShape)
+            )
+
+            // App Title
+            Text(
+                text = "HealthShield KE",
+                fontSize = 28.sp,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 16.dp)
+            )
+
+            // App Tagline
+            Text(
+                text = "Your Health, Our Shield.",
+                fontSize = 16.sp,
+                color = Color.White.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(80.dp))
+
+            // Progress Indicator
+            LinearProgressIndicator(
+                color = Color.White,
+                trackColor = Color.White.copy(alpha = 0.3f),
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .height(6.dp)
+                    .align(Alignment.CenterHorizontally)
+            )
+
+            // Footer Text
+            Text(
+                text = "Powered by Triple7 Innovations",
+                fontSize = 13.sp,
+                color = Color.White.copy(alpha = 0.6f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
     }
 }
 
-@Composable
 @Preview(showBackground = true)
+@Composable
 fun SplashScreenPreview() {
     SplashScreen(rememberNavController())
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

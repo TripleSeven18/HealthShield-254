@@ -1,18 +1,21 @@
 package com.triple7.healthshield254.navigation
 
-import LoginScreen
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.triple7.healthshield254.ui.screens.auth.LoginScreen
 import com.triple7.healthshield254.ui.screens.auth.RegisterScreen
 import com.triple7.healthshield254.ui.screens.crowdsourcinghub.CrowdsourcingHubScreen
 import com.triple7.healthshield254.ui.screens.educationalhub.EducationalHubScreen
 import com.triple7.healthshield254.ui.screens.home.HomeScreen
 import com.triple7.healthshield254.ui.screens.hotspotmap.HotspotMapScreen
+import com.triple7.healthshield254.ui.screens.onboarding.Onboarding1
+import com.triple7.healthshield254.ui.screens.onboarding.Onboarding2
 import com.triple7.healthshield254.ui.screens.profilesettings.ProfileSettingsScreen
+import com.triple7.healthshield254.ui.screens.reportmedicine.MedicineScreen
 import com.triple7.healthshield254.ui.screens.reportmedicine.ReportScreen
 import com.triple7.healthshield254.ui.screens.reportmedicine.ViewReport
 import com.triple7.healthshield254.ui.screens.splash.SplashScreen
@@ -64,6 +67,10 @@ fun AppNavHost(
             LoginScreen(navController)
         }
 
+        composable(ROUT_MEDICINE) {
+            MedicineScreen(navController)
+        }
+
 
 
         composable(ROUT_SENDREPORT) {
@@ -72,6 +79,14 @@ fun AppNavHost(
 
         composable(ROUT_VIEWREPORT) {
             ViewReport(navController)
+        }
+
+        composable(ROUT_ONBOARDING1) {
+            Onboarding1(navController)
+        }
+
+        composable(ROUT_ONBOARDING2) {
+            Onboarding2(navController)
         }
 
     }

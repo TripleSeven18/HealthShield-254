@@ -19,11 +19,17 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.viewinterop.AndroidView
@@ -31,297 +37,194 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.triple7.healthshield254.R
-import com.triple7.healthshield254.navigation.ROUT_EDUCATIONALHUB
-import com.triple7.healthshield254.navigation.ROUT_HOTSPOTMAP
-import com.triple7.healthshield254.navigation.ROUT_PROFILESETTINS
-import com.triple7.healthshield254.navigation.ROUT_SENDREPORT
-import com.triple7.healthshield254.navigation.ROUT_VERIFICATIONRECORDS
+import com.triple7.healthshield254.navigation.*
 import com.triple7.healthshield254.ui.theme.tripleSeven
 import kotlinx.coroutines.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.regex.Pattern
 import kotlin.math.roundToInt
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavController) {
-    var isDarkTheme by remember { mutableStateOf(false) }
     var showScanner by remember { mutableStateOf(false) }
     var scannedExpiry by remember { mutableStateOf<String?>(null) }
 
     if (showScanner) {
         ExpiryScanner(
-            onResult = { result ->
-                scannedExpiry = result
-                showScanner = false
-            },
+            onResult = { scannedExpiry = it; showScanner = false },
             onClose = { showScanner = false }
         )
-    } else {
-        MaterialTheme(
-            colorScheme = if (isDarkTheme) darkColorScheme() else lightColorScheme()
+        return
+    }
+
+    Scaffold(
+        topBar = { HomeTopBar() },
+        bottomBar = { HomeBottomNavigation(showScanner = { showScanner = true }) }
+    ) { paddingValues ->
+        val scrollState = rememberScrollState()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(scrollState)
+                .padding(16.dp)
         ) {
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.medicalinsurance),
-                                    contentDescription = "App Logo",
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .padding(end = 8.dp)
-                                )
-                                Text(
-                                    text = "MediCheck",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                IconButton(onClick = { /* Search */ }) {
-                                    Icon(Icons.Default.Search, contentDescription = "Search")
-                                }
-                                IconButton(onClick = { /* Notifications */ }) {
-                                    Icon(Icons.Default.Notifications, contentDescription = "Notifications")
-                                }
-                            }
-                        }
-                    )
-                },
-                bottomBar = {
-                    NavigationBar {
-                        NavigationBarItem(
-                            icon = { Icon(Icons.Default.AccountBox, contentDescription = "AccountBox") },
-                            selected = true,
-                            colors = NavigationBarItemDefaults.colors(tripleSeven),
-                            onClick = { /* Nav crowdsource */ }
-                        )
-                        NavigationBarItem(
-                            icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Scan") },
-                            selected = false,
-                            colors = NavigationBarItemDefaults.colors(tripleSeven),
-                            onClick = { showScanner = true }
-                        )
-                        NavigationBarItem(
-                            icon = { Icon(Icons.Default.MoreVert, contentDescription = "Map") },
-                            selected = false,
-                            colors = NavigationBarItemDefaults.colors(tripleSeven),
-                            onClick = { /* Map */ }
-                        )
-                        NavigationBarItem(
-                            icon = { Icon(Icons.Default.Person, contentDescription = "Community") },
-                            selected = false,
-                            colors = NavigationBarItemDefaults.colors(tripleSeven),
-                            onClick = { /* Profile */ }
-                        )
-                        NavigationBarItem(
-                            icon = { Icon(Icons.Default.Face, contentDescription = "Profile") },
-                            selected = false,
-                            colors = NavigationBarItemDefaults.colors(tripleSeven),
-                            onClick = { /* Settings */ }
-                        )
-                    }
-                }
-            ) { paddingValues ->
-                val scrollState = rememberScrollState()
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .padding(16.dp)
-                        .verticalScroll(scrollState),
-                    horizontalAlignment = Alignment.CenterHorizontally
+            // --- Greeting / Hero Card ---
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // --- Scan Medicine Button ---
-                    Button(
-                        colors = ButtonDefaults.buttonColors(containerColor = tripleSeven),
-                        onClick = { showScanner = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(60.dp)
-                            .padding(vertical = 8.dp),
-                        shape = CircleShape
-                    ) {
-                        Icon(Icons.Default.CheckCircle, contentDescription = "Scan")
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Scan Medicine")
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Hello, Ralib", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                        Text("Good Morning", color = Color.Gray, fontSize = 14.sp)
                     }
+                    Image(
+                        painter = painterResource(id = R.drawable.nurse),
+                        contentDescription = "Profile",
+                        modifier = Modifier.size(60.dp).clip(RoundedCornerShape(30.dp))
+                    )
+                }
+            }
 
-                    // --- Optional: show scanned result if available ---
-                    scannedExpiry?.let { expiry ->
-                        Text(
-                            text = "Scanned Expiry: $expiry",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-                    }
+            Spacer(modifier = Modifier.height(16.dp))
 
-                    OutlinedButton(
-                        onClick = { navController.navigate(ROUT_SENDREPORT) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                            .padding(vertical = 4.dp),
-                        shape = CircleShape
-                    ) {
-                        Icon(Icons.Default.Info, contentDescription = "Report")
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Report Suspected Product")
-                    }
+            // --- Search Bar ---
+            OutlinedTextField(
+                value = "",
+                onValueChange = {},
+                placeholder = { Text("Search doctors, medicine...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                    // Quick Access Grid
-                    val buttonModifier = Modifier
-                        .weight(1f)
-                        .height(60.dp)
-                        .padding(horizontal = 4.dp)
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Button(
-                                onClick = { navController.navigate(ROUT_HOTSPOTMAP)  },
-                                shape = RoundedCornerShape(62.dp),
-                                colors = ButtonDefaults.buttonColors(tripleSeven),
-                                modifier = buttonModifier
-                            ) {
-                                Icon(Icons.Default.LocationOn, contentDescription = "Hotspot Map")
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Hotspot Map")
-                            }
-                            Button(
-                                onClick = { navController.navigate(ROUT_EDUCATIONALHUB) },
-                                shape = RoundedCornerShape(62.dp),
-                                colors = ButtonDefaults.buttonColors(tripleSeven),
-                                modifier = buttonModifier
-                            ) {
-                                Icon(Icons.Default.AddCircle, contentDescription = "Education Hub")
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Education Hub")
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Button(
-                                onClick = { navController.navigate(ROUT_PROFILESETTINS)  },
-                                shape = RoundedCornerShape(62.dp),
-                                colors = ButtonDefaults.buttonColors(tripleSeven),
-                                modifier = buttonModifier
-                            ) {
-                                Icon(Icons.Default.Person, contentDescription = "Profile")
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Profile")
-                            }
-                            Button(
-                                onClick = { navController.navigate(ROUT_VERIFICATIONRECORDS) },
-                                shape = RoundedCornerShape(62.dp),
-                                colors = ButtonDefaults.buttonColors(tripleSeven),
-                                modifier = buttonModifier
-                            ) {
-                                Icon(Icons.Default.Info, contentDescription = "History")
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Verification Records")
-                            }
-                        }
-                    }
+            // --- Scan Button ---
+            GradientButton(
+                text = "Scan Medicine",
+                icon = Icons.Default.Info,
+                gradient = Brush.horizontalGradient(listOf(Color(0xFFEE0979), Color(0xFFFF6A00)))
+            ) { showScanner = true }
 
-                    Spacer(modifier = Modifier.height(20.dp))
-                    Text("Alerts", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    LazyRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp)
-                    ) {
-                        items(3) { index ->
-                            Card(
-                                modifier = Modifier
-                                    .padding(end = 12.dp)
-                                    .width(250.dp)
-                                    .height(80.dp),
-                                colors = CardDefaults.cardColors(containerColor = tripleSeven)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(color = tripleSeven),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = when (index) {
-                                            0 -> "!Counterfeit batch reported in Nairobi"
-                                            1 -> "New safety notice from PPB"
-                                            else -> "Verified medicine database updated"
-                                        },
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-                            }
-                        }
-                    }
+            scannedExpiry?.let {
+                Text("Scanned Expiry: $it", fontSize = 14.sp, color = Color.White, modifier = Modifier.padding(top = 8.dp))
+            }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
+            // --- Popular Doctors Carousel ---
+            Text("Popular Doctors", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                val doctors = listOf(
+                    R.drawable.nurse, R.drawable.medicalinsurance,
+                    R.drawable.img_18, R.drawable.img
+                )
+                items(doctors.size) { index ->
                     Card(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
+                            .width(160.dp)
+                            .height(200.dp)
+                            .shadow(4.dp, RoundedCornerShape(16.dp)),
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = tripleSeven)
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.nurse),
-                            contentDescription = "Nurse Image",
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Running text banner
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(30.dp)
-                            .background(tripleSeven),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        val infiniteTransition = rememberInfiniteTransition()
-                        val translateX by infiniteTransition.animateFloat(
-                            initialValue = 1000f,
-                            targetValue = -1000f,
-                            animationSpec = infiniteRepeatable(
-                                animation = tween(durationMillis = 15000, easing = LinearEasing),
-                                repeatMode = RepeatMode.Restart
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(8.dp)) {
+                            Image(
+                                painter = painterResource(id = doctors[index]),
+                                contentDescription = "Doctor $index",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(100.dp)
+                                    .clip(RoundedCornerShape(50.dp))
                             )
-                        )
-                        Text(
-                            text = " Important notice: Always check medicine authenticity!",
-                            modifier = Modifier.offset { IntOffset(translateX.roundToInt(), 0) },
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 14.sp,
-                            color = Color.Black
-                        )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Dr. John Doe", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("Cardiologist", color = Color.Gray, fontSize = 12.sp)
+                        }
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // --- Quick Action Grid ---
+            Column {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    DashboardCard("Hotspot Map", Icons.Default.LocationOn, Color(0xFFFFC107)) { navController.navigate(ROUT_HOTSPOTMAP) }
+                    DashboardCard("Education Hub", Icons.Default.Info, Color(0xFF4CAF50)) { navController.navigate(ROUT_EDUCATIONALHUB) }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    DashboardCard("Profile", Icons.Default.Person, Color(0xFF03A9F4)) { navController.navigate(ROUT_PROFILESETTINS) }
+                    DashboardCard("Verification Records", Icons.Default.Info, Color(0xFFE91E63)) { navController.navigate(ROUT_VERIFICATIONRECORDS) }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // --- Alerts Carousel (keep existing) ---
+            Text("Alerts", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+            ) {
+                items(3) { index ->
+                    Card(
+                        modifier = Modifier
+                            .padding(end = 12.dp)
+                            .width(250.dp)
+                            .height(80.dp)
+                            .shadow(4.dp, RoundedCornerShape(16.dp)),
+                        colors = CardDefaults.cardColors(containerColor = tripleSeven)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.horizontalGradient(
+                                        colors = listOf(Color(0xFFEF5350), Color(0xFFFF7043))
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = when (index) {
+                                    0 -> "!Counterfeit batch reported in Nairobi"
+                                    1 -> "New safety notice from PPB"
+                                    else -> "Verified medicine database updated"
+                                },
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.White,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // --- Running Notice Banner ---
+            MarqueeText("⚠ Important notice: Always check medicine authenticity before purchase! ")
         }
     }
 }
-
 
 
 @SuppressLint("UnsafeOptInUsageError")
@@ -340,14 +243,13 @@ fun ExpiryScanner(onResult: (String) -> Unit, onClose: () -> Unit) {
         )
     }
 
-    // ✅ Permission launcher
+    // Permission launcher
     val launcher = rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
     ) { granted ->
         hasPermission = granted
     }
 
-    // ✅ Ask for permission when entering screen
     LaunchedEffect(Unit) {
         if (!hasPermission) {
             launcher.launch(Manifest.permission.CAMERA)
@@ -356,68 +258,45 @@ fun ExpiryScanner(onResult: (String) -> Unit, onClose: () -> Unit) {
         }
     }
 
-    // ✅ Wait until permission is granted
     if (!hasPermission) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                "Camera permission is required to scan.",
-                color = Color.White,
-                fontSize = 16.sp
-            )
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Camera permission is required to scan.", color = Color.White)
         }
         return
     }
 
-    // ✅ Initialize camera once permission is available
-    LaunchedEffect(hasPermission) {
-        if (hasPermission) {
-            cameraProvider = ProcessCameraProvider.getInstance(context).get()
-        }
-    }
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        AndroidView(factory = { ctx ->
+            val previewView = PreviewView(ctx)
 
-    // === CAMERA PREVIEW ===
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        AndroidView(
-            factory = { ctx: android.content.Context ->  // ✅ specify type explicitly
-                val previewView = androidx.camera.view.PreviewView(ctx)
 
-                val preview = androidx.camera.core.Preview.Builder().build().also {
-                    it.setSurfaceProvider(previewView.surfaceProvider)  // ✅ correct reference
-                }
+            val preview = androidx.camera.core.Preview.Builder().build().also {
+                it.setSurfaceProvider(previewView.surfaceProvider)  // ✅ correct reference
+            }
 
-                val analyzer = androidx.camera.core.ImageAnalysis.Builder().build().also {
-                    it.setAnalyzer(cameraExecutor) { imageProxy ->
-                        CoroutineScope(Dispatchers.Default).launch {
-                            processImage(imageProxy) { detected ->
-                                launch(Dispatchers.Main) {
-                                    onResult(detected)
-                                }
-                            }
-                            imageProxy.close()
+
+            val analyzer = ImageAnalysis.Builder().build().also {
+                it.setAnalyzer(cameraExecutor) { imageProxy ->
+                    CoroutineScope(Dispatchers.Default).launch {
+                        processImage(imageProxy) { detected ->
+                            launch(Dispatchers.Main) { onResult(detected) }
                         }
+                        imageProxy.close()
                     }
                 }
+            }
 
-                val selector = CameraSelector.DEFAULT_BACK_CAMERA
-                cameraProvider?.unbindAll()
-                cameraProvider?.bindToLifecycle(lifecycleOwner, selector, preview, analyzer)
-                previewView
-            },
-            modifier = Modifier.fillMaxSize()
-        )
+            val selector = CameraSelector.DEFAULT_BACK_CAMERA
+            cameraProvider?.unbindAll()
+            cameraProvider?.bindToLifecycle(lifecycleOwner, selector, preview, analyzer)
+
+            previewView
+        }, modifier = Modifier.fillMaxSize())
 
         FloatingActionButton(
             onClick = onClose,
             containerColor = Color.Red,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
+            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
         ) {
             Icon(Icons.Default.Close, contentDescription = "Close")
         }
@@ -425,15 +304,10 @@ fun ExpiryScanner(onResult: (String) -> Unit, onClose: () -> Unit) {
         Text(
             text = "Scanning expiry date...",
             color = Color.White,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(24.dp),
-            fontSize = 16.sp
+            modifier = Modifier.align(Alignment.BottomCenter).padding(24.dp)
         )
     }
 }
-
-
 
 private suspend fun processImage(imageProxy: ImageProxy, onTextDetected: (String) -> Unit) {
     withContext(Dispatchers.Default) {
@@ -449,6 +323,132 @@ private suspend fun processImage(imageProxy: ImageProxy, onTextDetected: (String
         }
     }
 }
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HomeTopBar() {
+    TopAppBar(
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Image(
+                    painter = painterResource(id = R.drawable.medicalinsurance),
+                    contentDescription = "Logo",
+                    modifier = Modifier.size(32.dp).padding(end = 8.dp)
+                )
+                Text(
+                    text = "HealthShield254",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = { /* Search */ }) { Icon(Icons.Default.Search, contentDescription = null) }
+                IconButton(onClick = { /* Notifications */ }) { Icon(Icons.Default.Notifications, contentDescription = null) }
+            }
+        },
+        colors = TopAppBarDefaults.mediumTopAppBarColors(containerColor = tripleSeven)
+    )
+}
+
+@Composable
+fun HomeBottomNavigation(showScanner: () -> Unit) {
+    NavigationBar(containerColor = tripleSeven) {
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.AccountBox, contentDescription = "Account") },
+            selected = true,
+            onClick = { /* Navigate */ }
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.Info, contentDescription = "Scan") },
+            selected = false,
+            onClick = { showScanner() }
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.Info, contentDescription = "Map") },
+            selected = false,
+            onClick = { /* Navigate */ }
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
+            selected = false,
+            onClick = { /* Navigate */ }
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
+            selected = false,
+            onClick = { /* Navigate */ }
+        )
+    }
+}
+
+@Composable
+fun DashboardCard(title: String, icon: ImageVector, color: Color, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .height(100.dp)
+            .clickable { onClick() }
+            .padding(4.dp)
+            .shadow(4.dp, RoundedCornerShape(16.dp)),
+        colors = CardDefaults.cardColors(containerColor = color)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Icon(icon, contentDescription = title, modifier = Modifier.size(32.dp), tint = Color.White)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(title, color = Color.White, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+        }
+    }
+}
+
+@Composable
+fun GradientButton(text: String, icon: ImageVector, gradient: Brush, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(60.dp)
+            .clip(RoundedCornerShape(30.dp))
+            .background(gradient)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = text, tint = Color.White)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text, color = Color.White, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+fun MarqueeText(text: String) {
+    val infiniteTransition = rememberInfiniteTransition()
+    val translateX by infiniteTransition.animateFloat(
+        initialValue = 1000f,
+        targetValue = -1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 15000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        )
+    )
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(30.dp)
+            .background(Color(0xFFFFC107)),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.offset { IntOffset(translateX.roundToInt(), 0) },
+            fontWeight = FontWeight.Bold,
+            color = Color.Black
+        )
+    }
+}
+
 
 @Preview(showBackground = true)
 @Composable
