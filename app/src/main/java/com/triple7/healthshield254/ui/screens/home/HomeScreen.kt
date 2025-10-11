@@ -12,7 +12,6 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -21,7 +20,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -254,7 +252,10 @@ fun ExpiryScanner(onResult: (String) -> Unit, onClose: () -> Unit) {
         if (!hasPermission) {
             launcher.launch(Manifest.permission.CAMERA)
         } else {
-            cameraProvider = ProcessCameraProvider.getInstance(context).get()
+            val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+            cameraProviderFuture.addListener({
+             // use cameraProvider here (bind preview, etc.)
+            }, ContextCompat.getMainExecutor(context))
         }
     }
 

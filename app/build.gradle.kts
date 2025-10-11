@@ -89,6 +89,12 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.3.4")
     implementation("androidx.camera:camera-view:1.3.4")
     implementation("androidx.camera:camera-extensions:1.3.4")
+    implementation("com.google.guava:guava:31.1-android")
+
+    //Firestore dependency
+    implementation("com.google.firebase:firebase-firestore-ktx:25.1.1")
+
+    //End
 
 
 
