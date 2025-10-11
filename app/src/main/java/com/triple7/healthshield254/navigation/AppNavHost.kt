@@ -7,7 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.triple7.healthshield254.ui.screens.auth.LoginScreen
-import com.triple7.healthshield254.ui.screens.auth.RegisterScreen
+import com.triple7.healthshield254.ui.screens.auth.RegistrationScreen
 import com.triple7.healthshield254.ui.screens.crowdsourcinghub.CrowdsourcingHubScreen
 import com.triple7.healthshield254.ui.screens.educationalhub.EducationalHubScreen
 import com.triple7.healthshield254.ui.screens.home.HomeScreen
@@ -61,7 +61,7 @@ fun AppNavHost(
             ScanHistoryScreen(navController)
         }
         composable(ROUT_REGISTER) {
-            RegisterScreen(navController)
+            RegistrationScreen(navController)
         }
         composable(ROUT_LOGIN) {
             LoginScreen(navController)

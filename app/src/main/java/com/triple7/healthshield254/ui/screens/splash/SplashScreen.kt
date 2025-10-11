@@ -42,7 +42,7 @@ fun SplashScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(tripleSeven),
+            .background(Color.White),
         contentAlignment = Alignment.Center
     ) {
 
