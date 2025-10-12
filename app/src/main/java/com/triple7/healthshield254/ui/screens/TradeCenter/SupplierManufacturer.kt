@@ -2,6 +2,7 @@
 
 package com.triple7.healthshield254.ui.screens.TradeCenter
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,14 +19,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.google.firebase.firestore.FirebaseFirestore
+import com.triple7.healthshield254.R
 import com.triple7.healthshield254.ui.theme.triple777
 import com.triple7.healthshield254.ui.theme.tripleSeven
 import kotlinx.coroutines.launch
@@ -49,7 +55,7 @@ data class Partner(
 // MAIN SCREEN (NO NAVIGATION)
 // -----------------------------------------------------
 @Composable
-fun SupplierManufacturerDashboard() {
+fun SupplierManufacturerDashboard(navController: NavController) {
     var partners by remember { mutableStateOf<List<Partner>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -122,6 +128,25 @@ fun SupplierManufacturerDashboard() {
                     modifier = Modifier.size(36.dp)
                 )
             }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // --- 📷 Image at top ---
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()        // Fill the horizontal space
+                    .padding(top = 16.dp),
+                contentAlignment = Alignment.Center // Centers the image horizontally
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.medicalinsurance),
+                    contentDescription = "Trade Center Illustration",
+                    modifier = Modifier
+                        .size(width = 180.dp, height = 150.dp) // You can adjust width/height as needed
+                        .clip(RoundedCornerShape(20.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
 
             Spacer(Modifier.height(16.dp))
 
@@ -129,7 +154,7 @@ fun SupplierManufacturerDashboard() {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp),
+                    .height(250.dp),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF2979FF)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -166,11 +191,17 @@ fun SupplierManufacturerDashboard() {
 
             Spacer(Modifier.height(12.dp))
 
-            // --- Category Cards ---
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+// --- Category Cards ---
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight() // ⬅️ Fill available screen height
+                    .padding(bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 DashboardCard(
                     "Verified Manufacturers",
-                    Icons.Default.Info, // Factory Icon
+                    Icons.Default.Info,
                     bgColor = Color(0xFFBBDEFB),
                     iconColor = Color(0xFF1976D2)
                 ) {
@@ -179,7 +210,7 @@ fun SupplierManufacturerDashboard() {
 
                 DashboardCard(
                     "Verified Suppliers",
-                    Icons.Default.Info, //LocalShipping Icon
+                    Icons.Default.Info,
                     bgColor = Color(0xFFC8E6C9),
                     iconColor = Color(0xFF388E3C)
                 ) {
@@ -188,7 +219,7 @@ fun SupplierManufacturerDashboard() {
 
                 DashboardCard(
                     "All Verified Partners",
-                    Icons.Default.Info, //Verification Icon
+                    Icons.Default.Info,
                     bgColor = Color(0xFFE1BEE7),
                     iconColor = Color(0xFF7B1FA2)
                 ) {
@@ -197,32 +228,13 @@ fun SupplierManufacturerDashboard() {
 
                 DashboardCard(
                     "Blacklisted Suppliers",
-                    Icons.Default.Info, //Blacklist Icon
+                    Icons.Default.Info,
                     bgColor = Color(0xFFFFCDD2),
                     iconColor = Color(0xFFD32F2F)
                 ) {
                     coroutineScope.launch { fetchPartners("Blacklisted Suppliers") }
                 }
             }
-
-//            // --- 🔹 Lottie Animation at Bottom ---
-//            val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.medicarepositivity))
-//            val progress by animateLottieCompositionAsState(
-//                composition,
-//                iterations = LottieConstants.IterateForever
-//            )
-//
-//            LottieAnimation(
-//                composition = composition,
-//                progress = progress,
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .size(250.dp)
-//                    .padding(top = 16.dp),
-//                alignment = Alignment.Center
-//            )
-//
-//            Spacer(modifier = Modifier.height(16.dp))
 
 
             Spacer(Modifier.height(24.dp))
@@ -347,5 +359,5 @@ fun PartnerCard(partner: Partner) {
 @Preview(showBackground = true)
 @Composable
 fun PreviewSupplierManufacturer() {
-    SupplierManufacturerDashboard()
+    SupplierManufacturerDashboard(rememberNavController())
 }

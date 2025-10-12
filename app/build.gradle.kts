@@ -84,17 +84,34 @@ dependencies {
 
 
     //Camera
+// CameraX
     implementation("androidx.camera:camera-core:1.3.4")
     implementation("androidx.camera:camera-camera2:1.3.4")
     implementation("androidx.camera:camera-lifecycle:1.3.4")
     implementation("androidx.camera:camera-view:1.3.4")
     implementation("androidx.camera:camera-extensions:1.3.4")
-    implementation("com.google.guava:guava:31.1-android")
+
+    // CameraX
+    implementation("androidx.camera:camera-core:1.3.4")
+    implementation("androidx.camera:camera-camera2:1.3.4")
+    implementation("androidx.camera:camera-lifecycle:1.3.4")
+    implementation("androidx.camera:camera-view:1.3.4")
+// ML Kit Barcode
+    implementation("com.google.mlkit:barcode-scanning:17.0.3")
 
     //Firestore dependency
     implementation("com.google.firebase:firebase-firestore-ktx:25.1.1")
+    implementation("com.google.mlkit:barcode-scanning:17.0.3")
+
 
     //End
+
+// Firebase BOM (optional but recommended)
+    implementation(platform("com.google.firebase:firebase-bom:32.2.2"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-database-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+
 
 
 

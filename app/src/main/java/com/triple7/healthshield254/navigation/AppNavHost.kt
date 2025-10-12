@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.triple7.healthshield254.ui.screens.TradeCenter.PlaceOrderScreen
 import com.triple7.healthshield254.ui.screens.auth.LoginScreen
 import com.triple7.healthshield254.ui.screens.auth.RegistrationScreen
 import com.triple7.healthshield254.ui.screens.crowdsourcinghub.CrowdsourcingHubScreen
@@ -28,6 +29,10 @@ fun AppNavHost(
     navController: NavHostController = rememberNavController(),
     startDestination: String = ROUT_SPLASH
 ) {
+    // Hardcoded example user info, replace with your real user state
+    val currentUserType = "Consumer" // or "Supplier" / "Manufacturer"
+    val currentUserId = "user123"
+
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -36,33 +41,43 @@ fun AppNavHost(
         composable(ROUT_SPLASH) {
             SplashScreen(navController)
         }
+
         composable(ROUT_HOME) {
-            HomeScreen(navController,)
+            HomeScreen(navController)
         }
+
         composable(ROUT_SCANVERIFY) {
             ScanVerifyScreen(navController)
         }
+
         composable(ROUT_REPORTMEDICINE) {
             ScanVerifyScreen(navController)
         }
+
         composable(ROUT_CROWDSOURCING) {
             CrowdsourcingHubScreen(navController)
         }
+
         composable(ROUT_EDUCATIONALHUB) {
             EducationalHubScreen(navController)
         }
+
         composable(ROUT_HOTSPOTMAP) {
             HotspotMapScreen(navController)
         }
+
         composable(ROUT_PROFILESETTINS) {
             ProfileSettingsScreen(navController)
         }
+
         composable(ROUT_VERIFICATIONRECORDS) {
             ScanHistoryScreen(navController)
         }
+
         composable(ROUT_REGISTER) {
             RegistrationScreen(navController)
         }
+
         composable(ROUT_LOGIN) {
             LoginScreen(navController)
         }
@@ -70,8 +85,6 @@ fun AppNavHost(
         composable(ROUT_MEDICINE) {
             MedicineScreen(navController)
         }
-
-
 
         composable(ROUT_SENDREPORT) {
             ReportScreen(navController)
@@ -88,6 +101,17 @@ fun AppNavHost(
         composable(ROUT_ONBOARDING2) {
             Onboarding2(navController)
         }
+//
+//        composable(ROUT_SCANMEDICINE) {
+//            ScanMedicine(navController)
+//        }
 
+        // --- Place Order Screen ---
+        composable(ROUT_PLACEORDER) {
+            PlaceOrderScreen(
+                currentUserType = currentUserType,
+                currentUserId = currentUserId
+            )
+        }
     }
 }

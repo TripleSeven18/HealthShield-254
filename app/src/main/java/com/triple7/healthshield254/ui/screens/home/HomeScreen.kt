@@ -106,16 +106,16 @@ fun HomeScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Scan Button ---
+// --- Scan Button ---
             GradientButton(
-                text = "Scan Medicine",
+                text = "Scan Medicine Screen",
                 icon = Icons.Default.Info,
                 gradient = Brush.horizontalGradient(listOf(Color(0xFFEE0979), Color(0xFFFF6A00)))
-            ) { showScanner = true }
-
-            scannedExpiry?.let {
-                Text("Scanned Expiry: $it", fontSize = 14.sp, color = Color.White, modifier = Modifier.padding(top = 8.dp))
+            ) {
+                // Navigate to ScanMedicine screen
+//                navController.navigate(ROUT_SCANMEDICINE)
             }
+
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -239,24 +239,6 @@ fun ExpiryScanner(onResult: (String) -> Unit, onClose: () -> Unit) {
                 context, Manifest.permission.CAMERA
             ) == PackageManager.PERMISSION_GRANTED
         )
-    }
-
-    // Permission launcher
-    val launcher = rememberLauncherForActivityResult(
-        contract = androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        hasPermission = granted
-    }
-
-    LaunchedEffect(Unit) {
-        if (!hasPermission) {
-            launcher.launch(Manifest.permission.CAMERA)
-        } else {
-            val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-            cameraProviderFuture.addListener({
-             // use cameraProvider here (bind preview, etc.)
-            }, ContextCompat.getMainExecutor(context))
-        }
     }
 
     if (!hasPermission) {
