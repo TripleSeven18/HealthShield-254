@@ -1,5 +1,6 @@
 package com.triple7.healthshield254.ui.screens.reportmedicine
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -9,24 +10,26 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.triple7.healthshield254.R
+import com.triple7.healthshield254.ui.theme.tripleS
 import com.triple7.healthshield254.ui.theme.tripleSeven
-import androidx.compose.ui.graphics.Color
 
-// Data class to hold medicine info
 data class Medicine(
     val name: String,
     val dosage: String,
@@ -43,43 +46,41 @@ fun MedicineScreen(navController: NavController) {
 
     val medicines = listOf(
         Medicine(
-            name = "Paracetamol",
-            dosage = "500mg Tablet",
-            imageRes = R.drawable.img_17,
-            instructions = "Take one tablet every 6 hours as needed. Max 4 tablets in 24 hours.",
-            sideEffects = "Nausea, headache, dizziness. Consult a doctor if symptoms persist.",
-            warnings = "Do not use if you have liver disease. Keep out of reach of children.",
-            cardColor = tripleSeven
+            "Paracetamol",
+            "500mg Tablet",
+            R.drawable.img_17,
+            "Take one tablet every 6 hours as needed. Max 4 tablets in 24 hours.",
+            "Nausea, headache, dizziness. Consult a doctor if symptoms persist.",
+            "Do not use if you have liver disease. Keep out of reach of children.",
+            tripleSeven
         ),
         Medicine(
-            name = "Amoxicillin",
-            dosage = "250mg Capsule",
-            imageRes = R.drawable.img_18,
-            instructions = "Take one capsule every 8 hours for 7 days. Complete the course.",
-            sideEffects = "Diarrhea, stomach upset, rash. Consult a doctor if severe.",
-            warnings = "Do not use if allergic to penicillin. Avoid alcohol.",
-            cardColor = Color(0xFF81D4FA) // Light blue
+            "Amoxicillin",
+            "250mg Capsule",
+            R.drawable.img_18,
+            "Take one capsule every 8 hours for 7 days. Complete the course.",
+            "Diarrhea, stomach upset, rash. Consult a doctor if severe.",
+            "Do not use if allergic to penicillin. Avoid alcohol.",
+            Color(0xFF81D4FA)
         ),
         Medicine(
-            name = "Ibuprofen",
-            dosage = "200mg Tablet",
-            imageRes = R.drawable.medicalinsurance,
-            instructions = "Take one tablet every 6-8 hours with food. Max 6 tablets/day.",
-            sideEffects = "Upset stomach, dizziness, mild headache.",
-            warnings = "Avoid if you have stomach ulcers or kidney problems.",
-            cardColor = Color(0xFFFFCC80) // Light orange
+            "Ibuprofen",
+            "200mg Tablet",
+            R.drawable.medicalinsurance,
+            "Take one tablet every 6-8 hours with food. Max 6 tablets/day.",
+            "Upset stomach, dizziness, mild headache.",
+            "Avoid if you have stomach ulcers or kidney problems.",
+            Color(0xFFFFCC80)
         ),
-
-                Medicine(
-                name = "Cetirizine",
-        dosage = "10mg Tablet",
-        imageRes = R.drawable.medicalinsurance, // Replace with a relevant image if available
-        instructions = "Take one tablet daily with or without food. Do not exceed 10mg in 24 hours.",
-        sideEffects = "Drowsiness, dry mouth, mild headache. Consult a doctor if severe.",
-        warnings = "Avoid alcohol while taking this medicine. Use caution if you have kidney or liver disease.",
-        cardColor = Color(0xFFA5D6A7) // Light green
-    )
-
+        Medicine(
+            "Cetirizine",
+            "10mg Tablet",
+            R.drawable.medicalinsurance,
+            "Take one tablet daily with or without food. Do not exceed 10mg in 24 hours.",
+            "Drowsiness, dry mouth, mild headache. Consult a doctor if severe.",
+            "Avoid alcohol while taking this medicine. Use caution if you have kidney or liver disease.",
+            Color(0xFFA5D6A7)
+        )
     )
 
     Scaffold(
@@ -96,25 +97,15 @@ fun MedicineScreen(navController: NavController) {
             NavigationBar(containerColor = tripleSeven) {
                 NavigationBarItem(
                     selected = true,
-                    onClick = { /* Navigate to Home */ },
+                    onClick = {},
                     icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                    label = { Text("Home") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MaterialTheme.colorScheme.onPrimary,
-                        unselectedIconColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f)
-                    )
+                    label = { Text("Home") }
                 )
                 NavigationBarItem(
                     selected = false,
-                    onClick = { /* Navigate to Report */ },
+                    onClick = {},
                     icon = { Icon(Icons.Default.Info, contentDescription = "Report") },
                     label = { Text("Report") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { /* Navigate to Info */ },
-                    icon = { Icon(Icons.Default.Info, contentDescription = "Info") },
-                    label = { Text("Info") }
                 )
             }
         }
@@ -130,117 +121,126 @@ fun MedicineScreen(navController: NavController) {
         ) {
             medicines.forEach { medicine ->
                 item {
-                    // Medicine Image
                     Image(
                         painter = painterResource(id = medicine.imageRes),
                         contentDescription = "${medicine.name} Image",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .height(200.dp)
+                            .height(180.dp)
                             .fillMaxWidth(0.9f)
                             .clip(RoundedCornerShape(16.dp))
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // Medicine Name & Dosage
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Medicine Title Card
                     Card(
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(14.dp),
                         modifier = Modifier
                             .fillMaxWidth(0.9f)
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = 6.dp),
                         colors = CardDefaults.cardColors(containerColor = medicine.cardColor)
                     ) {
                         Column(
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier.padding(12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
                                 text = medicine.name,
-                                fontSize = 24.sp,
+                                fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimary
+                                color = Color.Black
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = medicine.dosage,
-                                fontSize = 16.sp,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                                fontSize = 15.sp,
+                                color = Color.DarkGray
                             )
                         }
                     }
 
-                    // Dosage Instructions
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .fillMaxWidth(0.9f)
-                            .padding(vertical = 8.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "Dosage Instructions",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = medicine.instructions,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-
-                    // Side Effects
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .fillMaxWidth(0.9f)
-                            .padding(vertical = 8.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "Side Effects",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = medicine.sideEffects,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-
-                    // Warnings
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .fillMaxWidth(0.9f)
-                            .padding(vertical = 8.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "Warnings",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = medicine.warnings,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(32.dp))
+                    MedicineCard("Dosage Instructions", medicine.instructions)
+                    MedicineCard("Side Effects", medicine.sideEffects)
+                    MedicineCard("Warnings", medicine.warnings)
                 }
             }
         }
     }
 }
+
+@Composable
+fun MedicineCard(title: String, text: String) {
+    Card(
+        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier
+            .fillMaxWidth(0.9f)
+            .height(90.dp)
+            .padding(vertical = 6.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(10.dp)) {
+            Text(
+                text = title,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            MarqueeText(text = text)
+        }
+    }
+}
+@Composable
+fun MarqueeText(text: String) {
+    var textWidth by remember { mutableStateOf(0f) }
+    var containerWidth by remember { mutableStateOf(0f) }
+    val density = LocalDensity.current
+
+    val infiniteTransition = rememberInfiniteTransition()
+    val animatedOffset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 12000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        )
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(300.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .background(tripleS)
+            .onGloballyPositioned { containerWidth = it.size.width.toFloat() },
+        contentAlignment = Alignment.CenterStart
+    ) {
+        if (textWidth > containerWidth) {
+            // Only scroll if text is wider than container
+            Row(
+                modifier = Modifier.offset {
+                    val offset = (-textWidth * animatedOffset).toInt()
+                    androidx.compose.ui.unit.IntOffset(offset, 0)
+                }
+            ) {
+                Text(
+                    text = text,
+                    fontSize = 14.sp,
+                    color = Color.White,
+                    modifier = Modifier.onGloballyPositioned {
+                        textWidth = it.size.width.toFloat()
+                    }
+                )
+                Spacer(modifier = Modifier.width(50.dp))
+                Text(text = text, fontSize = 14.sp, color = Color.White)
+            }
+        } else {
+            // If text fits, just show normally
+            Text(text = text, fontSize = 14.sp, color = Color.White)
+        }
+    }
+}
+
 
 @Preview(showBackground = true)
 @Composable

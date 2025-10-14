@@ -1,97 +1,112 @@
-package com.triple7.healthshield254.ui.screens.hotspotmap
+package com.triple7.healthshield254.ui.screens.dashboard
+
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
-import com.triple7.healthshield254.ui.theme.triple777
-import com.triple7.healthshield254.ui.theme.tripleSeven
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HotspotMapScreen(navController: NavController) {
-
-    // Mocked data for now — replace with live data later
-    val alerts = remember {
-        listOf(
-            Alert("Nairobi", "Counterfeit Paracetamol detected", "Paracetamol", "High"),
-            Alert("Mombasa", "Fake Amoxicillin batch reported", "Amoxicillin", "Moderate"),
-            Alert("Kisumu", "Expired Ibuprofen stock alert", "Ibuprofen", "Low")
-        )
-    }
-
-    var selectedFilter by remember { mutableStateOf("All") }
+    val activities = listOf(
+        ActivityItem("Walking", Icons.Filled.Info, Color(0xFF6DD5FA)), //DirectionsWalk icon
+        ActivityItem("Cycling", Icons.Filled.Info, Color(0xFFFFC371)), //DirectionsBike icon
+        ActivityItem("Driving", Icons.Filled.Info, Color(0xFFFF6B6B)), //DirectionsCar icon
+        ActivityItem("Train", Icons.Filled.Info, Color(0xFF42A5F5)), //Train icon
+        ActivityItem("Hiking", Icons.Filled.Info, Color(0xFF81C784)), //Hiking icon
+        ActivityItem("Flight", Icons.Filled.Info, Color(0xFFBA68C8)) //Flight icon
+    )
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Hotspot Map & Alerts") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = triple777
-                )
-            )
-        }
+        containerColor = Color(0xFFF8F8F8),
+        bottomBar = { ModernBottomNav() }
     ) { padding ->
-
         Column(
             modifier = Modifier
-                .padding(padding)
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(padding)
         ) {
-
-            // Filter controls
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Filter:", fontWeight = FontWeight.Bold)
-                FilterDropdown(selectedFilter) { selectedFilter = it }
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            // Simulated interactive map area
+            // HEADER
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(220.dp)
-                    .background(color = tripleSeven),
-                contentAlignment = Alignment.Center
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFFFF5F6D), Color(0xFFFFC371))
+                        )
+                    )
+                    .clip(RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp))
+                    .padding(24.dp)
             ) {
-                Text(
-                    "Interactive Map Placeholder\n(Geotagged reports)",
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    color = Color.Black
-                )
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Good Morning,",
+                        color = Color.White.copy(alpha = 0.9f),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = "Satwik Pachino ☀️",
+                        color = Color.White,
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.White.copy(alpha = 0.25f))
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text("21°C • Cloudy", color = Color.White, fontWeight = FontWeight.Medium)
+                    }
+                }
             }
+
+            Spacer(Modifier.height(20.dp))
+
+            Text(
+                text = "Start a new journey",
+                modifier = Modifier.padding(horizontal = 24.dp),
+                color = Color.Black,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
 
             Spacer(Modifier.height(16.dp))
 
-            Text(
-                "Recent Alerts",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(alerts.filter {
-                    selectedFilter == "All" || it.medicine == selectedFilter
-                }) { alert ->
-                    AlertCard(alert)
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxHeight()
+            ) {
+                items(activities) { item ->
+                    JourneyCard(item)
                 }
             }
         }
@@ -99,66 +114,85 @@ fun HotspotMapScreen(navController: NavController) {
 }
 
 @Composable
-fun AlertCard(alert: Alert) {
+fun JourneyCard(item: ActivityItem) {
+    var isPressed by remember { mutableStateOf(false) }
+    val bgColor by animateColorAsState(
+        targetValue = if (isPressed) item.color.copy(alpha = 0.9f) else Color.White,
+        label = "cardColor"
+    )
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = tripleSeven),
-        elevation = CardDefaults.cardElevation(4.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(140.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .shadow(6.dp, RoundedCornerShape(20.dp))
+            .clickable {
+                isPressed = !isPressed
+            },
+        colors = CardDefaults.cardColors(containerColor = bgColor)
     ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(alert.location, fontWeight = FontWeight.Bold)
-            Text(alert.description)
-            Text("Medicine: ${alert.medicine}")
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = item.icon,
+                contentDescription = item.title,
+                tint = if (isPressed) Color.White else item.color,
+                modifier = Modifier.size(48.dp)
+            )
+            Spacer(Modifier.height(10.dp))
             Text(
-                "Risk Level: ${alert.severity}",
-                color = when (alert.severity) {
-                    "High" -> Color.Black
-                    "Moderate" -> Color.Black
-                    else -> Color.Black
-                },
-                fontWeight = FontWeight.Bold
+                text = item.title,
+                color = if (isPressed) Color.White else Color.Black,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
             )
         }
     }
 }
 
 @Composable
-fun FilterDropdown(selected: String, onSelected: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    val options = listOf("All", "Paracetamol", "Amoxicillin", "Ibuprofen")
-
-    Box {
-        OutlinedButton(onClick = { expanded = true }) {
-            Text(selected)
-        }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            options.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(option) },
-                    onClick = {
-                        onSelected(option)
-                        expanded = false
-                    }
-                )
-            }
+fun ModernBottomNav() {
+    NavigationBar(
+        containerColor = Color.White,
+        tonalElevation = 8.dp
+    ) {
+        val items = listOf("Home", "Friends", "Stats", "Profile")
+        items.forEachIndexed { index, label ->
+            NavigationBarItem(
+                selected = index == 0,
+                onClick = {},
+                icon = {
+                    Icon(
+                        imageVector = when (label) {
+                            "Friends" -> Icons.Default.Info//Hiking icon
+                            "Stats" -> Icons.Default.Info//Train Icon
+                            "Profile" -> Icons.Default.Info//DirectionsBike icon
+                            else -> Icons.Default.Info//DirectionsWalk
+                        },
+                        contentDescription = label
+                    )
+                },
+                label = { Text(label) },
+                alwaysShowLabel = true
+            )
         }
     }
 }
 
-data class Alert(
-    val location: String,
-    val description: String,
-    val medicine: String,
-    val severity: String
+data class ActivityItem(
+    val title: String,
+    val icon: ImageVector,
+    val color: Color
 )
-@Composable
+
 @Preview(showBackground = true)
-
-fun HotspotMapScreenPreview(){
-
+@Composable
+fun PreviewHotspotMapScreen() {
     HotspotMapScreen(rememberNavController())
-
 }

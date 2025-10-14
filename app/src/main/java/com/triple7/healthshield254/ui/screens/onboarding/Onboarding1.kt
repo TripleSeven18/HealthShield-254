@@ -35,6 +35,7 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.triple7.healthshield254.R
 import com.triple7.healthshield254.navigation.ROUT_ONBOARDING2
+import com.triple7.healthshield254.navigation.ROUT_REGISTER
 import com.triple7.healthshield254.ui.theme.tripleSeven
 import kotlinx.coroutines.delay
 
@@ -47,7 +48,8 @@ fun Onboarding1(navController: NavController) {
     Scaffold { paddingValues ->
 
         Box(modifier = Modifier.fillMaxSize()) {
-            // --- Top-Right Icon ---
+
+            //Icon at top right
             Image(
                 painter = painterResource(id = R.drawable.medicalinsurance), // Replace with your drawable
                 contentDescription = "Top Right Icon",
@@ -120,7 +122,7 @@ fun Onboarding1(navController: NavController) {
 
                 // Get Started Button
                 Button(
-                    onClick = { navController.navigate(ROUT_ONBOARDING2) },
+                    onClick = { navController.navigate(ROUT_REGISTER) },
                     colors = ButtonDefaults.buttonColors(containerColor = tripleSeven),
                     shape = CircleShape,
                     modifier = Modifier

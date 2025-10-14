@@ -161,60 +161,88 @@ fun HomeScreen(navController: NavController) {
 
             // --- Quick Action Grid ---
             Column {
+                // First row (existing)
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    DashboardCard("Hotspot Map", Icons.Default.LocationOn, Color(0xFFFFC107)) { navController.navigate(ROUT_HOTSPOTMAP) }
-                    DashboardCard("Education Hub", Icons.Default.Info, Color(0xFF4CAF50)) { navController.navigate(ROUT_EDUCATIONALHUB) }
+                    DashboardCard("Hotspot Map", Icons.Default.LocationOn, Color(0xFFFFC107)) {
+                        navController.navigate(ROUT_HOTSPOTMAP)
+                    }
+                    DashboardCard("Education Hub", Icons.Default.Info, Color(0xFF4CAF50)) {
+                        navController.navigate(ROUT_EDUCATIONALHUB)
+                    }
                 }
+
                 Spacer(modifier = Modifier.height(12.dp))
+
+                // Second row (existing)
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    DashboardCard("Profile", Icons.Default.Person, Color(0xFF03A9F4)) { navController.navigate(ROUT_PROFILESETTINS) }
-                    DashboardCard("Verification Records", Icons.Default.Info, Color(0xFFE91E63)) { navController.navigate(ROUT_VERIFICATIONRECORDS) }
+                    DashboardCard("Profile", Icons.Default.Person, Color(0xFF03A9F4)) {
+                        navController.navigate(ROUT_PROFILESETTINS)
+                    }
+                    DashboardCard("Verification Records", Icons.Default.Info, Color(0xFFE91E63)) {
+                        navController.navigate(ROUT_VERIFICATIONRECORDS)
+                    }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-            // --- Alerts Carousel (keep existing) ---
-            Text("Alerts", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-            ) {
-                items(3) { index ->
-                    Card(
-                        modifier = Modifier
-                            .padding(end = 12.dp)
-                            .width(250.dp)
-                            .height(80.dp)
-                            .shadow(4.dp, RoundedCornerShape(16.dp)),
-                        colors = CardDefaults.cardColors(containerColor = tripleSeven)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(
-                                    Brush.horizontalGradient(
-                                        colors = listOf(Color(0xFFEF5350), Color(0xFFFF7043))
-                                    )
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = when (index) {
-                                    0 -> "!Counterfeit batch reported in Nairobi"
-                                    1 -> "New safety notice from PPB"
-                                    else -> "Verified medicine database updated"
-                                },
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color.White,
-                                textAlign = TextAlign.Center
-                            )
-                        }
+                // --- New row 1 ---
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    DashboardCard("Crowdsourcing Hub", Icons.Default.AccountBox, Color(0xFF9C27B0)) {
+                        navController.navigate("crowdsourcingHub")
+                    }
+                    DashboardCard("Scan Medicine", Icons.Default.Info, Color(0xFF00BCD4)) {
+                        navController.navigate(ROUT_CROWDSOURCING)
+                    }
+                }  //QrCodeScanner Icon
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // --- New row 2 ---
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    DashboardCard("Hotline", Icons.Default.Call, Color(0xFFFF5722)) {
+                        navController.navigate(ROUT_MEDICINE)
+                    }
+                    DashboardCard("Medicine Guide", Icons.Default.Info, Color(0xFF8BC34A)) {
+                        navController.navigate(ROUT_REPORTMEDICINE)
+                    }
+                } //Book Icon
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // --- New row 3 ---
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    DashboardCard("Nearby Clinics", Icons.Default.Info, Color(0xFF607D8B)) {
+                        navController.navigate(ROUT_VERIFICATIONRECORDS)
+                    } //LocalHospital Icon
+                    DashboardCard("view report", Icons.Default.Info, Color(0xFFFF9800)) {
+                        navController.navigate(ROUT_VIEWREPORT)
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // --- New row 3 ---
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                DashboardCard("Report Screen", Icons.Default.Info, Color(0xFF607D8B)) {
+                    navController.navigate(ROUT_SENDREPORT)
+                } //LocalHospital Icon
+                DashboardCard("Place Order", Icons.Default.Info, Color(0xFFFF9800)) {
+                        navController.navigate(ROUT_PLACEORDER)
+                }
+            }
+
+            // --- New row 3 ---
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                DashboardCard("Scan-History", Icons.Default.Info, Color(0xFF607D8B)) {
+                    navController.navigate(ROUT_VERIFICATIONRECORDS)
+                } //LocalHospital Icon
+                DashboardCard("Supplier Manufacturer", Icons.Default.Info, Color(0xFFFF9800)) {
+                    navController.navigate(ROUT_SUPPLIERMANUFACTURER)
+                }
+            }
+
+            //Feedback Icon
+
 
             Spacer(modifier = Modifier.height(20.dp))
 
@@ -339,7 +367,7 @@ fun HomeBottomNavigation(showScanner: () -> Unit) {
         NavigationBarItem(
             icon = { Icon(Icons.Default.AccountBox, contentDescription = "Account") },
             selected = true,
-            onClick = { /* Navigate */ }
+            onClick = {}
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Info, contentDescription = "Scan") },

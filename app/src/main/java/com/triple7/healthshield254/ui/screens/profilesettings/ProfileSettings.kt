@@ -1,27 +1,27 @@
 package com.triple7.healthshield254.ui.screens.profilesettings
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.material3.CheckboxDefaults.colors
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.rememberAsyncImagePainter
 import com.triple7.healthshield254.ui.theme.triple777
+import com.triple7.healthshield254.ui.theme.tripleS
 import com.triple7.healthshield254.ui.theme.tripleSeven
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,86 +35,144 @@ fun ProfileSettingsScreen(navController: NavController? = null) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Profile & Settings") },
+                title = { Text("Settings", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = triple777
+                    containerColor = tripleSeven,
+                    titleContentColor = Color.Black
                 )
             )
         }
     ) { padding ->
+
         Column(
             modifier = Modifier
-                .background(color = tripleSeven)
+                .background(Color(0xFFF9FAFB))
                 .padding(padding)
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // --- Profile Info Section ---
-//            Image(
-//                painter = rememberAsyncImagePainter("https://cdn-icons-png.flaticon.com/512/3135/3135715.png"),
-//                contentDescription = "Profile Picture",
-//                modifier = Modifier
-//                    .size(100.dp)
-//                    .clip(CircleShape)
-//            )
-            Spacer(Modifier.height(8.dp))
-            Text("Juma Jumaa", fontWeight = FontWeight.Bold, fontSize = MaterialTheme.typography.titleLarge.fontSize)
-            Text("jumaa.juma@email.com", color = Color.Gray)
-            Spacer(Modifier.height(24.dp))
-
-            Divider()
+            // --- Profile Card ---
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = tripleS),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = rememberAsyncImagePainter("https://cdn-icons-png.flaticon.com/512/3135/3135715.png"),
+                        contentDescription = "Profile Picture",
+                        modifier = Modifier
+                            .size(90.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Text("Juma Jumaa", fontWeight = FontWeight.Bold, fontSize = MaterialTheme.typography.titleLarge.fontSize)
+                    Text("jumaa.juma@email.com", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = { /* Edit Profile */ },
+                        colors = ButtonDefaults.buttonColors(containerColor = triple777),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("Edit Profile", color = Color.White)
+                    }
+                }
+            }
 
             // --- Settings Section ---
-            SettingItem(
-                icon = Icons.Default.MoreVert,
-                title = "Language",
-                subtitle = language,
-                trailing = {
-                    DropdownMenuSelector(
-                        selected = language,
-                        options = listOf("English", "Kiswahili", "French"),
-                        onSelect = { language = it }
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+
+                    SettingItem(
+                        icon = Icons.Default.Info, //Language icon
+                        title = "Language",
+                        subtitle = language,
+                        trailing = {
+                            DropdownMenuSelector(
+                                selected = language,
+                                options = listOf("English", "Kiswahili", "French"),
+                                onSelect = { language = it }
+                            )
+                        }
+                    )
+                    Divider()
+                    SettingToggle(
+                        icon = Icons.Default.Notifications,
+                        title = "Notifications",
+                        checked = notificationsEnabled,
+                        onCheckedChange = { notificationsEnabled = it }
+                    )
+                    Divider()
+                    SettingToggle(
+                        icon = Icons.Default.Info, //CloudDownload icon
+                        title = "Offline Cache",
+                        checked = offlineCacheEnabled,
+                        onCheckedChange = { offlineCacheEnabled = it }
+                    )
+                    Divider()
+                    SettingToggle(
+                        icon = Icons.Default.Lock,
+                        title = "Privacy Mode",
+                        checked = privacyAccepted,
+                        onCheckedChange = { privacyAccepted = it }
                     )
                 }
-            )
+            }
 
-            SettingToggle(
-                icon = Icons.Default.Notifications,
-                title = "Notifications",
-                checked = notificationsEnabled,
-                onCheckedChange = { notificationsEnabled = it }
-            )
+            // --- Promo Card ---
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFA726)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("Refer a Friend 🎉", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Invite and earn rewards", color = Color.White.copy(alpha = 0.8f))
+                    }
+                    Icon(Icons.Default.Send, contentDescription = null, tint = Color.White)
+                }
+            }
 
-            SettingToggle(
-                icon = Icons.Default.AddCircle,
-                title = "Offline Cache",
-                checked = offlineCacheEnabled,
-                onCheckedChange = { offlineCacheEnabled = it }
-            )
-
-            SettingToggle(
-                icon = Icons.Default.Lock,
-                title = "Privacy Mode",
-                checked = privacyAccepted,
-                onCheckedChange = { privacyAccepted = it }
-            )
-
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
 
             // --- Logout Button ---
             Button(
-                onClick = { /* Handle logout logic */ },
+                onClick = { /* Handle logout */ },
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = triple777),
-                modifier = Modifier.fillMaxWidth()
+                colors = ButtonDefaults.buttonColors(containerColor = triple777)
             ) {
                 Text("Log Out", color = Color.White)
             }
 
-            Spacer(Modifier.height(12.dp))
-            Text("Version 1.0.0", color = Color.Black, style = MaterialTheme.typography.labelSmall)
+            Spacer(Modifier.height(10.dp))
+            Text("Version 1.0.0", color = Color.Gray, style = MaterialTheme.typography.labelSmall)
         }
     }
 }
@@ -129,15 +187,15 @@ fun SettingItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Icon(icon, contentDescription = null, tint = triple777)
             Spacer(Modifier.width(12.dp))
             Column {
-                Text(title, fontWeight = FontWeight.Bold)
+                Text(title, fontWeight = FontWeight.Medium)
                 Text(subtitle, color = Color.Gray, style = MaterialTheme.typography.bodySmall)
             }
         }
@@ -155,16 +213,16 @@ fun SettingToggle(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Icon(icon, contentDescription = null, tint = triple777)
             Spacer(Modifier.width(12.dp))
-            Text(title, fontWeight = FontWeight.Bold)
+            Text(title, fontWeight = FontWeight.Medium)
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Switch(checked = checked, onCheckedChange = onCheckedChange, colors = SwitchDefaults.colors(checkedThumbColor = triple777))
     }
 }
 
@@ -174,7 +232,7 @@ fun DropdownMenuSelector(selected: String, options: List<String>, onSelect: (Str
 
     Box {
         TextButton(onClick = { expanded = true }) {
-            Text(selected)
+            Text(selected, color = triple777)
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { option ->
@@ -190,11 +248,8 @@ fun DropdownMenuSelector(selected: String, options: List<String>, onSelect: (Str
     }
 }
 
-@Composable
 @Preview(showBackground = true)
-
-fun ProfileSettingsScreenPreview(){
-
+@Composable
+fun ProfileSettingsScreenPreview() {
     ProfileSettingsScreen(rememberNavController())
-
 }

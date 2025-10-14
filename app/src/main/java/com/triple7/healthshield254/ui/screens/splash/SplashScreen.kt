@@ -22,6 +22,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.airbnb.lottie.compose.*
 import com.triple7.healthshield254.R
+import com.triple7.healthshield254.navigation.ROUT_ONBOARDING1
 import com.triple7.healthshield254.navigation.ROUT_REGISTER
 import com.triple7.healthshield254.ui.theme.tripleSeven
 import kotlinx.coroutines.delay
@@ -33,7 +34,7 @@ fun SplashScreen(navController: NavController) {
     // Auto navigate to Register screen after delay
     LaunchedEffect(Unit) {
         delay(3000)
-        navController.navigate(ROUT_REGISTER) {
+        navController.navigate(ROUT_ONBOARDING1) {
             popUpTo("splash") { inclusive = true }
         }
     }

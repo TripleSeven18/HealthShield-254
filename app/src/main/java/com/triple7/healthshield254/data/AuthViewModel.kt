@@ -10,6 +10,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.triple7.healthshield254.navigation.ROUT_HOME
 import com.triple7.healthshield254.navigation.ROUT_LOGIN
 import com.triple7.healthshield254.navigation.ROUT_ONBOARDING1
+import com.triple7.healthshield254.navigation.ROUT_ONBOARDING2
 import com.triple7.healthshield254.navigation.ROUT_REGISTER
 
 
@@ -59,7 +60,7 @@ class AuthViewModel(var navController: NavController, var context: Context){
             mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener {
                 if (it.isSuccessful ){
                     Toast.makeText(this.context, "Success", Toast.LENGTH_SHORT).show()
-                    navController.navigate(ROUT_ONBOARDING1)
+                    navController.navigate(ROUT_ONBOARDING2)
                 }else{
                     Toast.makeText(this.context, "Error", Toast.LENGTH_SHORT).show()
                 }
