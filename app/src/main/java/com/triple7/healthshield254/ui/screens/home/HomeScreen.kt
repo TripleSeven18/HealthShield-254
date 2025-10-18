@@ -214,6 +214,18 @@ fun HomeScreen(navController: NavController) {
                 DashboardCard("Supplier Manufacturer", R.drawable.supplier, Color(0xFF009688)) {
                     navController.navigate(ROUT_SUPPLIERMANUFACTURER)
                 }
+
+                DashboardCard("Analytics Screen", R.drawable.supplier, Color(0xFF009688)) {
+                    navController.navigate(ROUT_ANALYTIVCSCREEN)
+                }
+
+                DashboardCard("ChatBoard Screen", R.drawable.supplier, Color(0xFF009688)) {
+                    navController.navigate(ROUT_CHATBOARDCHSCREEN)
+                }
+
+                DashboardCard("Admin Screen", R.drawable.supplier, Color(0xFF009688)) {
+                    navController.navigate(ROUT_ADMIN)
+                }
             }
 
             Spacer(modifier = Modifier.height(20.dp))

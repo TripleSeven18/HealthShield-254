@@ -126,7 +126,7 @@ class AnalyticsViewModel : ViewModel() {
    🧱 UI Components
 -------------------------------------------------------------------------- */
 @Composable
-fun AnalyticScreen(title: String, value: String, color: Color = tripleSeven) {
+fun AnalyticsScreen(title: String, value: String, color: Color = tripleSeven) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F8E9))
@@ -204,11 +204,11 @@ fun AnalyticsScreen(navController: NavController, viewModel: AnalyticsViewModel 
             item {
                 Text("📊 Summary Overview", fontWeight = FontWeight.Bold, fontSize = 20.sp)
                 Spacer(Modifier.height(6.dp))
-                AnalyticScreen("Total Orders", "${summary.totalOrders}")
-                AnalyticScreen("Avg. Order Price", "${summary.averagePrice.roundToInt()} USD")
-                AnalyticScreen("Total Reports", "${summary.totalReports}")
-                AnalyticScreen("Fake Distributor Reports", "${summary.fakeDistributors}")
-                AnalyticScreen("Critical Severity Cases", "${summary.criticalCases}")
+                AnalyticsScreen("Total Orders", "${summary.totalOrders}")
+                AnalyticsScreen("Avg. Order Price", "${summary.averagePrice.roundToInt()} USD")
+                AnalyticsScreen("Total Reports", "${summary.totalReports}")
+                AnalyticsScreen("Fake Distributor Reports", "${summary.fakeDistributors}")
+                AnalyticsScreen("Critical Severity Cases", "${summary.criticalCases}")
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "Last Updated: ${dateFormat.format(Date(summary.lastUpdated))}",
