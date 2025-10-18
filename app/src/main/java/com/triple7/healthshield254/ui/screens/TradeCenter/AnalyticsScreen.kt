@@ -126,7 +126,7 @@ class AnalyticsViewModel : ViewModel() {
    🧱 UI Components
 -------------------------------------------------------------------------- */
 @Composable
-fun SummaryCard(title: String, value: String, color: Color = tripleSeven) {
+fun AnalyticScreen(title: String, value: String, color: Color = tripleSeven) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F8E9))
@@ -204,11 +204,11 @@ fun AnalyticsScreen(navController: NavController, viewModel: AnalyticsViewModel 
             item {
                 Text("📊 Summary Overview", fontWeight = FontWeight.Bold, fontSize = 20.sp)
                 Spacer(Modifier.height(6.dp))
-                SummaryCard("Total Orders", "${summary.totalOrders}")
-                SummaryCard("Avg. Order Price", "${summary.averagePrice.roundToInt()} USD")
-                SummaryCard("Total Reports", "${summary.totalReports}")
-                SummaryCard("Fake Distributor Reports", "${summary.fakeDistributors}")
-                SummaryCard("Critical Severity Cases", "${summary.criticalCases}")
+                AnalyticScreen("Total Orders", "${summary.totalOrders}")
+                AnalyticScreen("Avg. Order Price", "${summary.averagePrice.roundToInt()} USD")
+                AnalyticScreen("Total Reports", "${summary.totalReports}")
+                AnalyticScreen("Fake Distributor Reports", "${summary.fakeDistributors}")
+                AnalyticScreen("Critical Severity Cases", "${summary.criticalCases}")
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "Last Updated: ${dateFormat.format(Date(summary.lastUpdated))}",
@@ -238,6 +238,6 @@ fun AnalyticsScreen(navController: NavController, viewModel: AnalyticsViewModel 
 -------------------------------------------------------------------------- */
 @Preview(showBackground = true)
 @Composable
-fun AnalyticsScreenPreview() {
+fun AnalyticScreenPreview() {
     AnalyticsScreen(navController = rememberNavController())
 }
