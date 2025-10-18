@@ -1,0 +1,36 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="12dp"
+    android:height="12dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorControlNormal">
+
+    <!-- Central user (main contributor) -->
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M12,12a3,3 0,1,0 0,-6a3,3 0,0,0 0,6z" />
+
+    <!-- Central user base (body) -->
+    <path
+        android:fillColor="#1976D2"
+        android:pathData="M6,20v-1a5,5 0,0,1 10,0v1z" />
+
+    <!-- Left side contributor -->
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M4,12a2.5,2.5 0,1,0 0,-5a2.5,2.5 0,0,0 0,5z" />
+
+    <!-- Right side contributor -->
+    <path
+        android:fillColor="#FF9800"
+        android:pathData="M20,12a2.5,2.5 0,1,0 0,-5a2.5,2.5 0,0,0 0,5z" />
+
+    <!-- Connection lines -->
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M6,10l6,2l6,-2"
+        android:strokeWidth="0.5"
+        android:strokeColor="#9E9E9E"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round" />
+</vector>

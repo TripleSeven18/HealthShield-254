@@ -1,0 +1,26 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="12dp"
+    android:height="12dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorControlNormal">
+
+    <!-- Outer signal ring -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FF5722"
+        android:strokeWidth="2"
+        android:pathData="M12,4a8,8 0,1,1 0,16a8,8 0,1,1 0,-16z" />
+
+    <!-- Inner signal ring -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FF9800"
+        android:strokeWidth="2"
+        android:pathData="M12,7a5,5 0,1,1 0,10a5,5 0,1,1 0,-10z" />
+
+    <!-- Center dot -->
+    <path
+        android:fillColor="#FF5722"
+        android:pathData="M12,10a2,2 0,1,1 0,4a2,2 0,1,1 0,-4z" />
+</vector>

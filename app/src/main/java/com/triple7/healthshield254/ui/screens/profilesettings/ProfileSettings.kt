@@ -14,12 +14,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
+import com.triple7.healthshield254.R
 import com.triple7.healthshield254.ui.theme.triple777
 import com.triple7.healthshield254.ui.theme.tripleS
 import com.triple7.healthshield254.ui.theme.tripleSeven
@@ -35,16 +37,30 @@ fun ProfileSettingsScreen(navController: NavController? = null) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        "Settings",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = tripleSeven,
-                    titleContentColor = Color.Black
-                )
+                    containerColor = Color.White
+                ),
+                actions = {
+                    IconButton(onClick = { /* TODO: handle icon click */ }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.medicalinsurance),
+                            contentDescription = "Notifications",
+                            modifier = Modifier.size(60.dp),
+                            tint = Color.Unspecified // Keeps original icon colors
+                        )
+                    }
+                }
             )
         }
     ) { padding ->
-
-        Column(
+    Column(
             modifier = Modifier
                 .background(Color(0xFFF9FAFB))
                 .padding(padding)

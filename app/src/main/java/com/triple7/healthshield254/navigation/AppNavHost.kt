@@ -8,6 +8,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.triple7.healthshield254.ui.screens.TradeCenter.PlaceOrderScreen
 import com.triple7.healthshield254.ui.screens.TradeCenter.SupplierManufacturerDashboard
+import com.triple7.healthshield254.ui.screens.admin.AdminScreen
+import com.triple7.healthshield254.ui.screens.admin.UploadMedicineScreen
+import com.triple7.healthshield254.ui.screens.auth.LaunchScreen
 import com.triple7.healthshield254.ui.screens.auth.LoginScreen
 import com.triple7.healthshield254.ui.screens.auth.RegistrationScreen
 import com.triple7.healthshield254.ui.screens.crowdsourcinghub.CrowdsourcingHubScreen
@@ -54,6 +57,10 @@ fun AppNavHost(
         composable(ROUT_REPORTMEDICINE) {
             ScanVerifyScreen(navController)
         }
+        composable(ROUT_UPLOADMEDICINE) {
+            UploadMedicineScreen(navController)
+        }
+
 
         composable(ROUT_CROWDSOURCING) {
             CrowdsourcingHubScreen(navController)
@@ -62,6 +69,10 @@ fun AppNavHost(
         composable(ROUT_EDUCATIONALHUB) {
             EducationalHubScreen(navController)
         }
+        composable(ROUT_ADMIN) {
+            AdminScreen(navController)
+        }
+
 
         composable(ROUT_HOTSPOTMAP) {
             HotspotMapScreen(navController)
@@ -104,6 +115,12 @@ fun AppNavHost(
         }
         composable(ROUT_SUPPLIERMANUFACTURER) {
             SupplierManufacturerDashboard(navController)
+        }
+        composable(ROUT_UPLOADMEDICINE) {
+            SupplierManufacturerDashboard(navController)
+        }
+        composable(ROUT_LAUNCHSCREEN) {
+            LaunchScreen(navController)
         }
 //
 //        composable(ROUT_SCANMEDICINE) {

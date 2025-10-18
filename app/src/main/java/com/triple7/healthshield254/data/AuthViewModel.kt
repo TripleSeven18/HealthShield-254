@@ -7,6 +7,7 @@ import androidx.navigation.NavController
 import com.triple7.healthshield254.models.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.triple7.healthshield254.navigation.ROUT_ADMIN
 import com.triple7.healthshield254.navigation.ROUT_HOME
 import com.triple7.healthshield254.navigation.ROUT_LOGIN
 import com.triple7.healthshield254.navigation.ROUT_ONBOARDING1
@@ -56,6 +57,9 @@ class AuthViewModel(var navController: NavController, var context: Context){
         if (email.isBlank() || password.isBlank()){
             Toast.makeText(context,"Please email and password cannot be blank", Toast.LENGTH_LONG).show()
         }
+        else if (email == "admin@gmail.com" && password == "admin123"){
+            navController.navigate(ROUT_ADMIN)
+        }
         else {
             mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener {
                 if (it.isSuccessful ){
@@ -68,6 +72,29 @@ class AuthViewModel(var navController: NavController, var context: Context){
 
         }
     }
+
+    fun checkLoginStatus() {
+        val currentUser = mAuth.currentUser
+        if (currentUser != null) {
+            // 🔹 Admin redirect (based on email)
+            if (currentUser.email == "admin@gmail.com") {
+                navController.navigate(ROUT_ADMIN) {
+                    popUpTo(0) { inclusive = true }
+                }
+            } else {
+                // 🔹 Normal user redirect
+                navController.navigate(ROUT_ONBOARDING2) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+        } else {
+            // 🔹 No user logged in → Go to Login screen
+            navController.navigate(ROUT_LOGIN) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+
 
 
 

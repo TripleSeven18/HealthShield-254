@@ -1,3 +1,4 @@
+// file: com/triple7/healthshield254/ui/screens/reportmedicine/ReportMedicineScreen.kt
 package com.triple7.healthshield254.ui.screens.reportmedicine
 
 import android.Manifest
@@ -20,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -32,8 +34,6 @@ import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.triple7.healthshield254.ui.theme.triple777
 import com.triple7.healthshield254.ui.theme.tripleSeven
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.io.File
 
 data class Report(
@@ -48,10 +48,9 @@ data class Report(
 @RequiresApi(Build.VERSION_CODES.S)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReportMedicineScreen(
-    onSend: (Report) -> Unit = {}
-) {
+fun ReportMedicineScreen(onSend: (Report) -> Unit = {}) {
     val context = LocalContext.current
+    val isInPreviewMode = LocalInspectionMode.current
     val scope = rememberCoroutineScope()
 
     var photos by remember { mutableStateOf(listOf<Uri>()) }
@@ -61,38 +60,40 @@ fun ReportMedicineScreen(
     var lat by remember { mutableStateOf<Double?>(null) }
     var lon by remember { mutableStateOf<Double?>(null) }
 
-    // Counterfeit alert state
     var isCounterfeit by remember { mutableStateOf(false) }
     var alertMessage by remember { mutableStateOf("") }
-
-    // Purchase history and suspicious batches from Firebase
     var purchaseHistory by remember { mutableStateOf(listOf<Report>()) }
     var suspiciousBatches by remember { mutableStateOf(listOf<String>()) }
 
-    // Firebase references
-    val database = FirebaseDatabase.getInstance()
-    val reportsRef = database.getReference("reports")
-    val suspiciousRef = database.getReference("suspicious_batches")
+    if (!isInPreviewMode) {
+        val database = FirebaseDatabase.getInstance()
+        val reportsRef = database.getReference("reports")
+        val suspiciousRef = database.getReference("suspicious_batches")
 
-    // Listen for Firebase updates
-    LaunchedEffect(Unit) {
-        suspiciousRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                suspiciousBatches = snapshot.children.mapNotNull { it.getValue(String::class.java) }
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        })
-        reportsRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                purchaseHistory = snapshot.children.mapNotNull { it.getValue(Report::class.java) }
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        })
+        LaunchedEffect(Unit) {
+            suspiciousRef.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    suspiciousBatches = snapshot.children.mapNotNull { it.getValue(String::class.java) }
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
+            reportsRef.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    purchaseHistory = snapshot.children.mapNotNull { it.getValue(Report::class.java) }
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
+        }
+    } else {
+        // Dummy data for preview rendering
+        purchaseHistory = listOf(
+            Report(batch = "XYZ123", expiry = "12/2026", notes = "Sample", lat = -1.286, lon = 36.817)
+        )
+        suspiciousBatches = listOf("XYZ123")
     }
 
-    // Camera launcher
     val takePhotoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) {
+        if (success && !isInPreviewMode) {
             val latestFile = context.cacheDir.listFiles()?.maxByOrNull { it.lastModified() }
             latestFile?.let { file ->
                 val uri = Uri.fromFile(file)
@@ -100,8 +101,6 @@ fun ReportMedicineScreen(
                 runOcrOnImage(context, uri) { recognizedText ->
                     if (batch.isBlank()) batch = extractBatch(recognizedText) ?: batch
                     if (expiry.isBlank()) expiry = extractExpiry(recognizedText) ?: expiry
-
-                    // Counterfeit check
                     if (batch in suspiciousBatches) {
                         isCounterfeit = true
                         alertMessage = "⚠️ Suspicious medicine detected! Batch: $batch"
@@ -111,14 +110,12 @@ fun ReportMedicineScreen(
         }
     }
 
-    // Location permission launcher
     val locationLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (granted) fetchLocation(context) { la, lo -> lat = la; lon = lo }
+        if (granted && !isInPreviewMode) fetchLocation(context) { la, lo -> lat = la; lon = lo }
     }
 
-    // Send report to Firebase
     val sendReport: () -> Unit = {
         val report = Report(
             photos,
@@ -128,7 +125,9 @@ fun ReportMedicineScreen(
             lat,
             lon
         )
-        reportsRef.push().setValue(report)
+        if (!isInPreviewMode) {
+            FirebaseDatabase.getInstance().getReference("reports").push().setValue(report)
+        }
         onSend(report)
     }
 
@@ -147,7 +146,6 @@ fun ReportMedicineScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Counterfeit alert
             if (isCounterfeit) Text(alertMessage, color = Color.Red, modifier = Modifier.padding(8.dp))
 
             Button(onClick = {
@@ -175,7 +173,6 @@ fun ReportMedicineScreen(
             } else Text("No photos yet. Capture front, back, and batch/expiry.", color = Color.Gray)
 
             Spacer(Modifier.height(16.dp))
-
             OutlinedTextField(value = batch, onValueChange = { batch = it }, label = { Text("Batch (auto-extracted)") }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(value = expiry, onValueChange = { expiry = it }, label = { Text("Expiry (auto-extracted)") }, modifier = Modifier.fillMaxWidth())
@@ -183,7 +180,6 @@ fun ReportMedicineScreen(
             OutlinedTextField(value = notes, onValueChange = { notes = it }, label = { Text("Notes (optional)") }, modifier = Modifier.fillMaxWidth().height(120.dp))
 
             Spacer(Modifier.height(12.dp))
-
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = if (lat != null && lon != null) "Location captured: ${formatLocation(lat, lon)}" else "Location (optional)",
@@ -195,84 +191,32 @@ fun ReportMedicineScreen(
             }
 
             Spacer(Modifier.height(18.dp))
-
-            Button(
-                colors = ButtonDefaults.buttonColors(triple777),
-                onClick = { sendReport() }, enabled = photos.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "Send Report"
-                )
+            Button(colors = ButtonDefaults.buttonColors(triple777), onClick = sendReport, enabled = photos.isNotEmpty() || isInPreviewMode, modifier = Modifier.fillMaxWidth()) {
+                Text("Send Report")
             }
 
             Spacer(Modifier.height(12.dp))
-
-            Button(onClick = { exportReports(context, purchaseHistory) }, enabled = purchaseHistory.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
+            Button(onClick = { if (!isInPreviewMode) exportReports(context, purchaseHistory) }, enabled = purchaseHistory.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
                 Text("Export Verification Logs")
             }
 
             Spacer(Modifier.height(12.dp))
-
-            // Analytics Dashboard
             if (purchaseHistory.isNotEmpty()) {
                 Text("Analytics Dashboard", style = MaterialTheme.typography.titleMedium)
                 val suspiciousCount = purchaseHistory.count { it.batch in suspiciousBatches }
                 Text("Total suspicious medicines: $suspiciousCount")
-
-                Spacer(Modifier.height(12.dp))
-
-                // Trending suspicious batches chart
-                val batchCounts = purchaseHistory
-                    .filter { it.batch in suspiciousBatches }
-                    .groupingBy { it.batch }
-                    .eachCount()
-
-                if (batchCounts.isNotEmpty()) {
-                    Text("Trending Suspicious Batches", style = MaterialTheme.typography.titleSmall)
-                    Spacer(Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(150.dp)
-                            .horizontalScroll(rememberScrollState()),
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        val maxCount = batchCounts.values.maxOrNull() ?: 1
-                        batchCounts.forEach { (batch, count) ->
-                            Column(
-                                modifier = Modifier
-                                    .padding(horizontal = 4.dp)
-                                    .width(40.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .height((count.toFloat() / maxCount * 120).dp)
-                                        .fillMaxWidth()
-                                        .background(Color.Red, shape = MaterialTheme.shapes.small)
-                                )
-                                Spacer(Modifier.height(4.dp))
-                                Text(batch ?: "-", maxLines = 1) // default "-" if null
-                                Text(count.toString())
-                            }
-                        }
-                    }
-                }
             }
         }
     }
 }
 
-/* -------------------- Helpers -------------------- */
+/* ---------- Helpers ---------- */
 
-private fun extractBatch(text: String): String? {
-    val regex = Regex("(?i)batch[:\\s-]*([A-Za-z0-9]+)")
-    return regex.find(text)?.groups?.get(1)?.value
-}
+private fun extractBatch(text: String): String? =
+    Regex("(?i)batch[:\\s-]*([A-Za-z0-9]+)").find(text)?.groups?.get(1)?.value
 
-private fun extractExpiry(text: String): String? {
-    val regex = Regex("(?i)(exp|expiry)[:\\s-]*([A-Za-z0-9/]+)")
-    return regex.find(text)?.groups?.get(2)?.value
-}
+private fun extractExpiry(text: String): String? =
+    Regex("(?i)(exp|expiry)[:\\s-]*([A-Za-z0-9/]+)").find(text)?.groups?.get(2)?.value
 
 fun runOcrOnImage(context: Context, uri: Uri, onResult: (String) -> Unit) {
     try {
@@ -280,8 +224,8 @@ fun runOcrOnImage(context: Context, uri: Uri, onResult: (String) -> Unit) {
         val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
         recognizer.process(image)
             .addOnSuccessListener { visionText -> onResult(visionText.text) }
-            .addOnFailureListener { e -> e.printStackTrace(); onResult("") }
-    } catch (e: Exception) { e.printStackTrace(); onResult("") }
+            .addOnFailureListener { onResult("") }
+    } catch (e: Exception) { onResult("") }
 }
 
 @RequiresApi(Build.VERSION_CODES.S)
@@ -298,24 +242,23 @@ private fun fetchLocation(context: Context, onResult: (Double?, Double?) -> Unit
             }
         }
         fused.requestLocationUpdates(request, callback, Looper.getMainLooper())
-    } catch (e: Exception) { e.printStackTrace(); onResult(null, null) }
+    } catch (e: Exception) { onResult(null, null) }
 }
 
 private fun formatLocation(lat: Double?, lon: Double?): String =
     if (lat != null && lon != null) String.format("%.5f, %.5f", lat, lon) else "N/A"
 
 private fun exportReports(context: Context, reports: List<Report>) {
-    val csv = StringBuilder("Batch,Expiry,Notes,Lat,Lon,Photos\n")
-    reports.forEach { r ->
-        csv.append("${r.batch ?: ""},${r.expiry ?: ""},${r.notes ?: ""},${r.lat ?: ""},${r.lon ?: ""},${r.photos.joinToString(";")}\n")
+    val csv = buildString {
+        append("Batch,Expiry,Notes,Lat,Lon,Photos\n")
+        reports.forEach { r ->
+            append("${r.batch ?: ""},${r.expiry ?: ""},${r.notes ?: ""},${r.lat ?: ""},${r.lon ?: ""},${r.photos.joinToString(";")}\n")
+        }
     }
-    val file = File(context.cacheDir, "verification_logs.csv")
-    file.writeText(csv.toString())
-    // TODO: optionally share file via intent
+    File(context.cacheDir, "verification_logs.csv").writeText(csv)
 }
 
-/* -------------------- Preview -------------------- */
-
+/* ---------- Preview ---------- */
 @RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true)
 @Composable

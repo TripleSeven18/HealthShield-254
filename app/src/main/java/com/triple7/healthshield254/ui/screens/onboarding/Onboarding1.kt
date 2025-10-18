@@ -80,7 +80,7 @@ fun Onboarding1(navController: NavController) {
                     composition = composition,
                     progress = progress,
                     modifier = Modifier
-                        .size(350.dp)
+                        .size(250.dp)
                         .padding(top = 16.dp),
                     alignment = Alignment.Center
                 )
