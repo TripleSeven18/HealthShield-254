@@ -11,6 +11,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -25,7 +26,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.viewinterop.AndroidView
@@ -70,14 +70,12 @@ fun HomeScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFFCEFF9)) // light pinkish background
+                .background(Color(0xFFFCEFF9))
                 .padding(paddingValues)
                 .verticalScroll(scrollState)
                 .padding(16.dp)
         ) {
 
-            // --- Greeting ---
-// --- Top Row: Greeting + Notification Icon ---
             // --- Top Row: Greeting + Notification Icon ---
             Row(
                 modifier = Modifier
@@ -86,7 +84,6 @@ fun HomeScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // --- Greeting ---
                 Column {
                     val currentHour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
                     val greetingText = when (currentHour) {
@@ -107,7 +104,6 @@ fun HomeScreen(navController: NavController) {
                     )
                 }
 
-                // --- Top-right Icon (keeps its original colors) ---
                 IconButton(
                     onClick = { /* navController.navigate(ROUT_NOTIFICATIONS) */ }
                 ) {
@@ -115,7 +111,7 @@ fun HomeScreen(navController: NavController) {
                         painter = painterResource(id = R.drawable.medicalinsurance),
                         contentDescription = "Notifications",
                         modifier = Modifier.size(28.dp),
-                        tint = Color.Unspecified // Keeps original icon colors
+                        tint = Color.Unspecified
                     )
                 }
             }
@@ -178,53 +174,57 @@ fun HomeScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Dashboard Cards (Single Column Layout like Screenshot) ---
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            // --- Dashboard Cards (Horizontally Scrollable, Two per Column) ---
+            val dashboardItems = listOf(
+                Triple("Hotspot Map", R.drawable.hotspotmap, Color(0xFFFFC107)),
+                Triple("View Reports", R.drawable.viewreport, Color(0xFF03A9F4)),
+                Triple("Crowdsourcing Hub", R.drawable.crowdsourcing, Color(0xFF9C27B0)),
+                Triple("Medicine", R.drawable.medicine, Color(0xFFFF5722)),
+                Triple("Report Medicine", R.drawable.reportmedicine, Color(0xFF8BC34A)),
+                Triple("Report Screen", R.drawable.reportscreen, Color(0xFF607D8B)),
+                Triple("Place Order", R.drawable.placeorder, Color(0xFFFF9800)),
+                Triple("Supplier Manufacturer", R.drawable.supplier, Color(0xFF009688)),
+                Triple("Analytics Screen", R.drawable.supplier, Color(0xFF3F51B5)),
+                Triple("ChatBoard Screen", R.drawable.supplier, Color(0xFF795548)),
+                Triple("Admin Screen", R.drawable.supplier, Color(0xFFCDDC39)),
+                Triple("Upload-Medicine Screen", R.drawable.supplier, Color(0xFF673AB7))
+            )
+
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                DashboardCard("Hotspot Map", R.drawable.hotspotmap, Color(0xFFFFC107)) {
-                    navController.navigate(ROUT_HOTSPOTMAP)
-                }
-
-                DashboardCard("view reports", R.drawable.viewreport, Color(0xFF03A9F4)) {
-                    navController.navigate(ROUT_SENDREPORT)
-                }
-
-                DashboardCard("Crowdsourcing Hub", R.drawable.crowdsourcing, Color(0xFF9C27B0)) {
-                    navController.navigate(ROUT_CROWDSOURCING)
-                }
-
-                DashboardCard("Medicine", R.drawable.medicine, Color(0xFFFF5722)) {
-                    navController.navigate(ROUT_MEDICINE)
-                }
-
-                DashboardCard("Report Medicine", R.drawable.reportmedicine, Color(0xFF8BC34A)) {
-                    navController.navigate(ROUT_REPORTMEDICINE)
-                }
-
-                DashboardCard("Report Screen", R.drawable.reportscreen, Color(0xFF607D8B)) {
-                    navController.navigate(ROUT_SENDREPORT)
-                }
-
-                DashboardCard("Place Order", R.drawable.placeorder, Color(0xFFFF9800)) {
-                    navController.navigate(ROUT_PLACEORDER)
-                }
-
-                DashboardCard("Supplier Manufacturer", R.drawable.supplier, Color(0xFF009688)) {
-                    navController.navigate(ROUT_SUPPLIERMANUFACTURER)
-                }
-
-                DashboardCard("Analytics Screen", R.drawable.supplier, Color(0xFF009688)) {
-                    navController.navigate(ROUT_ANALYTIVCSCREEN)
-                }
-
-                DashboardCard("ChatBoard Screen", R.drawable.supplier, Color(0xFF009688)) {
-                    navController.navigate(ROUT_CHATBOARDCHSCREEN)
-                }
-
-                DashboardCard("Admin Screen", R.drawable.supplier, Color(0xFF009688)) {
-                    navController.navigate(ROUT_ADMIN)
+                items(items = dashboardItems.chunked(2)) { pair ->   // Use `items(items = ...)`
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.width(280.dp)
+                    ) {
+                        pair.forEach { (title, icon, color) ->
+                            DashboardCard(
+                                title = title,
+                                iconRes = icon,
+                                color = color,
+                                onClick = {
+                                    when (title) {
+                                        "Hotspot Map" -> navController.navigate(ROUT_HOTSPOTMAP)
+                                        "View Reports" -> navController.navigate(ROUT_SENDREPORT)
+                                        "Crowdsourcing Hub" -> navController.navigate(ROUT_CROWDSOURCING)
+                                        "Medicine" -> navController.navigate(ROUT_MEDICINE)
+                                        "Report Medicine" -> navController.navigate(ROUT_REPORTMEDICINE)
+                                        "Report Screen" -> navController.navigate(ROUT_SENDREPORT)
+                                        "Place Order" -> navController.navigate(ROUT_PLACEORDER)
+                                        "Supplier Manufacturer" -> navController.navigate(ROUT_SUPPLIERMANUFACTURER)
+                                        "Analytics Screen" -> navController.navigate(ROUT_ANALYTIVCSCREEN)
+                                        "ChatBoard Screen" -> navController.navigate(ROUT_CHATBOARDCHSCREEN)
+                                        "Admin Screen" -> navController.navigate(ROUT_ADMIN)
+                                        "Upload-Medicine Screen" -> navController.navigate(ROUT_UPLOADMEDICINE)
+                                    }
+                                }
+                            )
+                        }
+                    }
                 }
             }
 
@@ -236,6 +236,7 @@ fun HomeScreen(navController: NavController) {
     }
 }
 
+// --- Remaining Composables unchanged ---
 @SuppressLint("UnsafeOptInUsageError")
 @Composable
 fun ExpiryScanner(onResult: (String) -> Unit, onClose: () -> Unit) {
@@ -319,11 +320,11 @@ private suspend fun processImage(imageProxy: ImageProxy, onTextDetected: (String
 fun DashboardCard(title: String, iconRes: Int, color: Color, onClick: () -> Unit) {
     Card(
         modifier = Modifier
-            .fillMaxWidth()          // Full width
-            .height(120.dp)          // 🔹 Increased height from 90.dp → 120.dp
+            .fillMaxWidth()
+            .height(120.dp)
             .padding(horizontal = 8.dp, vertical = 6.dp)
             .clickable { onClick() }
-            .shadow(6.dp, RoundedCornerShape(20.dp)), // Slightly rounder
+            .shadow(6.dp, RoundedCornerShape(20.dp)),
         colors = CardDefaults.cardColors(containerColor = color),
         shape = RoundedCornerShape(20.dp)
     ) {
@@ -337,7 +338,7 @@ fun DashboardCard(title: String, iconRes: Int, color: Color, onClick: () -> Unit
             Icon(
                 painter = painterResource(id = iconRes),
                 contentDescription = title,
-                modifier = Modifier.size(42.dp),  // 🔹 Larger icon for better balance
+                modifier = Modifier.size(42.dp),
                 tint = Color.White
             )
             Spacer(modifier = Modifier.width(24.dp))
@@ -345,7 +346,7 @@ fun DashboardCard(title: String, iconRes: Int, color: Color, onClick: () -> Unit
                 text = title,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
-                fontSize = 18.sp              // 🔹 Slightly larger text
+                fontSize = 18.sp
             )
         }
     }

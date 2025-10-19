@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,6 +29,9 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.database.*
+import com.triple7.healthshield254.R
+import com.triple7.healthshield254.navigation.ROUT_CHATBOARDCHSCREEN
+import com.triple7.healthshield254.navigation.ROUT_HOME
 
 data class MedicineUpload(
     val name: String = "",
@@ -90,7 +94,7 @@ fun MedicineScreen(navController: NavController) {
             TopAppBar(
                 title = {
                     Text(
-                        "Medicine Report",
+                        "Pharmaceutical Guide",
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
@@ -109,15 +113,23 @@ fun MedicineScreen(navController: NavController) {
             NavigationBar(containerColor = Color(0xFF004D40)) {
                 NavigationBarItem(
                     selected = true,
-                    onClick = { navController.popBackStack() },
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Home", tint = Color.White) },
+                    onClick = { navController.navigate(ROUT_HOME) },
+                    icon = { Icon(Icons.Default.Home, contentDescription = "Home", tint = Color.Black,
+                            modifier = Modifier.size(32.dp),
+
+                        )
+                           },
                     label = { Text("Home", color = Color.White) }
                 )
                 NavigationBarItem(
                     selected = false,
-                    onClick = { /* Add future actions like filter or refresh */ },
-                    icon = { Icon(Icons.Default.Info, contentDescription = "Medicines", tint = Color.White) },
-                    label = { Text("Medicines", color = Color.White) }
+                    onClick = { navController.navigate(ROUT_CHATBOARDCHSCREEN) },
+                    icon = { Icon(painter = painterResource(id = R.drawable.consultation),
+                        contentDescription = "Consultation", tint = Color.Black,
+                        modifier = Modifier.size(32.dp),
+                        )
+                           },
+                    label = { Text("Consultation", color = Color.White) }
                 )
             }
         }

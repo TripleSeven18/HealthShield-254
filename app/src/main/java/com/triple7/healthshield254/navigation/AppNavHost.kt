@@ -128,7 +128,7 @@ fun AppNavHost(
             SupplierManufacturerDashboard(navController)
         }
         composable(ROUT_UPLOADMEDICINE) {
-            SupplierManufacturerDashboard(navController)
+            UploadMedicineScreen(navController)
         }
         composable(ROUT_LAUNCHSCREEN) {
             LaunchScreen(navController)

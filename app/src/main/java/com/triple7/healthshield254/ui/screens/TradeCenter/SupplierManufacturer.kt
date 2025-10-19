@@ -2,6 +2,7 @@
 
 package com.triple7.healthshield254.ui.screens.TradeCenter
 
+import android.graphics.fonts.FontFamily
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -117,10 +118,12 @@ fun SupplierManufacturerDashboard(navController: NavController) {
             ) {
                 Text(
                     text = "Trade With Us",
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
                     fontSize = 24.sp,
-                    color = Color.Green
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Cursive,
+                    color = tripleSeven
                 )
+
                 Icon(
                     Icons.Default.AccountCircle,
                     contentDescription = "Profile",

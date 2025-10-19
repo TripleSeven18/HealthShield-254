@@ -1,6 +1,7 @@
 package com.triple7.healthshield254.ui.screens.splash
 
 import android.annotation.SuppressLint
+import android.graphics.fonts.FontFamily
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -85,18 +86,21 @@ fun SplashScreen(navController: NavController) {
             // App Title
             Text(
                 text = "HealthShield KE",
-                fontSize = 28.sp,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
+                fontSize = 35.sp,
+                color = tripleSeven,
+                fontWeight = FontWeight.ExtraBold,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Cursive,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 16.dp)
             )
 
             // App Tagline
             Text(
-                text = "Your Health, Our Shield.",
+                text = "We Are The Health-Shield",
                 fontSize = 16.sp,
-                color = Color.White.copy(alpha = 0.8f),
+                fontWeight = FontWeight.Bold,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Cursive,
+                color = Color.Black,
                 textAlign = TextAlign.Center
             )
 

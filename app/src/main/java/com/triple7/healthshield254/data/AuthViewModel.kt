@@ -76,6 +76,7 @@ class AuthViewModel(var navController: NavController, var context: Context){
     fun checkLoginStatus() {
         val currentUser = mAuth.currentUser
         if (currentUser != null) {
+
             // 🔹 Admin redirect (based on email)
             if (currentUser.email == "admin@gmail.com") {
                 navController.navigate(ROUT_ADMIN) {
