@@ -84,6 +84,14 @@ dependencies {
     implementation("com.google.firebase:firebase-storage-ktx")
     implementation(libs.androidx.compose.foundation)
 
+    // Google Maps
+    implementation("com.google.maps.android:maps-compose:2.11.4")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.maps.android:android-maps-utils:2.3.0")
+    implementation("com.google.maps.android:maps-compose-utils:2.11.4")
+    implementation("com.google.maps.android:maps-compose-widgets:2.11.4")
+    implementation("com.google.maps.android:maps-compose-heatmap:2.11.4")
+
 
     // Testing
     testImplementation(libs.junit)

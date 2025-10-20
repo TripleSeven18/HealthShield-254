@@ -22,6 +22,7 @@ import com.triple7.healthshield254.ui.screens.onboarding.Onboarding2
 import com.triple7.healthshield254.ui.screens.profilesettings.ProfileSettingsScreen
 import com.triple7.healthshield254.ui.screens.reportmedicine.MedicineScreen
 import com.triple7.healthshield254.ui.screens.reportmedicine.ReportScreen
+import com.triple7.healthshield254.ui.screens.reportmedicine.ScanMedicine
 import com.triple7.healthshield254.ui.screens.reportmedicine.ViewReport
 import com.triple7.healthshield254.ui.screens.splash.SplashScreen
 import com.triple7.healthshield254.ui.screens.verificationrecords.ScanHistoryScreen
@@ -50,11 +51,11 @@ fun AppNavHost(
             HomeScreen(navController)
         }
 
-        composable(ROUT_CHATBOARDCHSCREEN) {
+        composable(ROUT_CHATBOARDSCREEN) {
             ChatBoardScreen(navController, currentUserId = "user1")
         }
 
-        composable(ROUT_ANALYTIVCSCREEN) {
+        composable(ROUT_ANALYTICSSCREEN) {
             AnalyticsScreen(navController)
         }
 
@@ -123,10 +124,10 @@ fun AppNavHost(
         composable(ROUT_LAUNCHSCREEN) {
             LaunchScreen(navController)
         }
-//
-//        composable(ROUT_SCANMEDICINE) {
-//            ScanMedicine(navController)
-//        }
+
+        composable(ROUT_SCANMEDICINE) {
+            ScanMedicine(navController)
+        }
 
         // --- Place Order Screen ---
         composable(ROUT_PLACEORDER) {

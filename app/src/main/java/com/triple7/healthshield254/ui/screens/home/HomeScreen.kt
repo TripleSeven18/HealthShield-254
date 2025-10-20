@@ -1,76 +1,68 @@
 package com.triple7.healthshield254.ui.screens.home
 
-import android.Manifest
-import android.annotation.SuppressLint
-import android.content.pm.PackageManager
-import android.util.Log
-import androidx.camera.core.*
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.*
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.google.firebase.auth.FirebaseAuth
 import com.triple7.healthshield254.R
 import com.triple7.healthshield254.navigation.*
+import com.triple7.healthshield254.ui.theme.HealthShield254Theme
 import com.triple7.healthshield254.ui.theme.tripleSeven
-import kotlinx.coroutines.*
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.regex.Pattern
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun HomeScreen(navController: NavController) {
-    var showScanner by remember { mutableStateOf(false) }
-    var scannedExpiry by remember { mutableStateOf<String?>(null) }
-
-    if (showScanner) {
-        ExpiryScanner(
-            onResult = { scannedExpiry = it; showScanner = false },
-            onClose = { showScanner = false }
-        )
-        return
+    val user = FirebaseAuth.getInstance().currentUser
+    val userName = remember(user) {
+        user?.displayName?.takeIf { it.isNotBlank() } ?: user?.email?.split('@')?.get(0)?.replaceFirstChar { it.uppercase() } ?: "User"
     }
 
     Scaffold(
         bottomBar = {
             HomeBottomNavigation(
                 navController = navController,
-                showScanner = { showScanner = true },
                 onProfileClick = { navController.navigate(ROUT_PROFILESETTINS) }
             )
         }
     ) { paddingValues ->
 
         val scrollState = rememberScrollState()
+        val gradientBrush = Brush.verticalGradient(
+            colors = listOf(tripleSeven.copy(alpha = 0.2f), Color.Transparent)
+        )
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFFCEFF9))
+                .background(gradientBrush)
                 .padding(paddingValues)
                 .verticalScroll(scrollState)
                 .padding(16.dp)
@@ -93,7 +85,7 @@ fun HomeScreen(navController: NavController) {
                     }
 
                     Text(
-                        text = "Hello, John 👋",
+                        text = "Hello, $userName 👋",
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
@@ -120,72 +112,74 @@ fun HomeScreen(navController: NavController) {
 
             // --- Scan Medicine Button ---
             GradientButton(
-                text = "Scan Medicine Screen",
-                icon = Icons.Default.Info,
-                gradient = Brush.horizontalGradient(listOf(Color(0xFFEE0979), Color(0xFFFF6A00)))
+                text = "Scan Medicine",
+                icon = Icons.Default.Info, // QrCodeScanner Icon
+                gradient = Brush.horizontalGradient(
+                    listOf(tripleSeven, tripleSeven.copy(alpha = 0.7f))
+                )
             ) {
-                // navController.navigate(ROUT_SCANMEDICINE)
+                navController.navigate(ROUT_SCANMEDICINE)
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Popular Doctors Carousel ---
-            Text("Popular Doctors", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.DarkGray)
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            // --- Your Profile Card ---
+            Text("Your Profile", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.DarkGray)
+            Spacer(modifier = Modifier.height(8.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                val doctors = listOf(
-                    R.drawable.nurse,
-                    R.drawable.medicalinsurance,
-                    R.drawable.img_18,
-                    R.drawable.img
-                )
-                items(doctors.size) { index ->
-                    Card(
+                Row(
+                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.profile), // Generic profile icon
+                        contentDescription = "Profile Picture",
                         modifier = Modifier
-                            .width(160.dp)
-                            .height(200.dp)
-                            .shadow(4.dp, RoundedCornerShape(16.dp)),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(8.dp)
-                        ) {
-                            Image(
-                                painter = painterResource(id = doctors[index]),
-                                contentDescription = "Doctor $index",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .size(100.dp)
-                                    .clip(RoundedCornerShape(50.dp))
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("Dr. John Doe", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Cardiologist", color = Color.Gray, fontSize = 12.sp)
-                        }
+                            .size(50.dp)
+                            .clip(RoundedCornerShape(25.dp))
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(userName, fontWeight = FontWeight.Bold)
+                        user?.email?.let { Text(it, color = Color.Gray) }
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Dashboard Cards (Horizontally Scrollable, Two per Column) ---
+            // --- Dashboard Cards ---
+            val impressiveColors = listOf(
+                Color(0xFF4A90E2), // Bright Blue
+                Color(0xFF50E3C2), // Aqua Green
+                Color(0xFFB8E986), // Pastel Green
+                Color(0xFFF5A623), // Orange
+                Color(0xFFF8E71C), // Yellow
+                Color(0xFF8B572A), // Brown
+                Color(0xFF7ED321), // Lime Green
+                Color(0xFF9013FE), // Purple
+                Color(0xFFBD10E0), // Magenta
+                Color(0xFF417505), // Dark Green
+                Color(0xFFD0021B)  // Red
+            )
+
             val dashboardItems = listOf(
-                Triple("Hotspot Map", R.drawable.hotspotmap, Color(0xFFFFC107)),
-                Triple("Report counterfeit", R.drawable.reportcounterfeit, Color(0xFF03A9F4)),
-                Triple("Medicine", R.drawable.medicine, Color(0xFFFF5722)),
-                Triple("Profile & Settings", R.drawable.profile, Color(0xFF607D8B)),
-                Triple("Place Order", R.drawable.placeorder, Color(0xFFFF9800)),
-                Triple("Supplier Manufacturer", R.drawable.supplier, Color(0xFF009688)),
-                Triple("Analytics Screen", R.drawable.supplier, Color(0xFF3F51B5)),
-                Triple("ChatBoard Screen", R.drawable.supplier, Color(0xFF795548)),
-                Triple("Admin Screen", R.drawable.supplier, Color(0xFFCDDC39)),
-                Triple("Upload-Medicine Screen", R.drawable.supplier, Color(0xFF673AB7))
+                Triple("Hotspot Map", R.drawable.hotspotmap, impressiveColors[0]),
+                Triple("ScanMedicine", R.drawable.scan, impressiveColors[1]),
+                Triple("Report counterfeit", R.drawable.reportcounterfeit, impressiveColors[2]),
+                Triple("Medicine", R.drawable.medicine, impressiveColors[3]),
+                Triple("Profile & Settings", R.drawable.profile, impressiveColors[4]),
+                Triple("Place Order", R.drawable.placeorder, impressiveColors[5]),
+                Triple("Supplier Manufacturer", R.drawable.supplier, impressiveColors[6]),
+                Triple("Analytics Screen", R.drawable.supplier, impressiveColors[7]),
+                Triple("ChatBoard Screen", R.drawable.supplier, impressiveColors[8]),
+                Triple("Admin Screen", R.drawable.supplier, impressiveColors[9]),
+                Triple("Upload-Medicine Screen", R.drawable.supplier, impressiveColors[10])
             )
 
             LazyRow(
@@ -194,7 +188,7 @@ fun HomeScreen(navController: NavController) {
                     .padding(top = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(items = dashboardItems.chunked(2)) { pair ->   // Use `items(items = ...)`
+                items(items = dashboardItems.chunked(2)) { pair ->
                     Column(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.width(280.dp)
@@ -207,12 +201,13 @@ fun HomeScreen(navController: NavController) {
                                 onClick = {
                                     when (title) {
                                         "Hotspot Map" -> navController.navigate(ROUT_HOTSPOTMAP)
+                                        "ScanMedicine" -> navController.navigate(ROUT_SCANMEDICINE)
                                         "Report counterfeit" -> navController.navigate(ROUT_SENDREPORT)
                                         "Medicine" -> navController.navigate(ROUT_MEDICINE)
                                         "Place Order" -> navController.navigate(ROUT_PLACEORDER)
                                         "Supplier Manufacturer" -> navController.navigate(ROUT_SUPPLIERMANUFACTURER)
-                                        "Analytics Screen" -> navController.navigate(ROUT_ANALYTIVCSCREEN)
-                                        "ChatBoard Screen" -> navController.navigate(ROUT_CHATBOARDCHSCREEN)
+                                        "Analytics Screen" -> navController.navigate(ROUT_ANALYTICSSCREEN)
+                                        "ChatBoard Screen" -> navController.navigate(ROUT_CHATBOARDSCREEN)
                                         "Admin Screen" -> navController.navigate(ROUT_ADMIN)
                                         "Upload-Medicine Screen" -> navController.navigate(ROUT_UPLOADMEDICINE)
                                         "Profile & Settings" -> navController.navigate(ROUT_PROFILESETTINS)
@@ -228,86 +223,6 @@ fun HomeScreen(navController: NavController) {
 
             // --- Notice Banner ---
             MarqueeText("⚠ Important notice: Always check medicine authenticity before purchase!")
-        }
-    }
-}
-
-// --- Remaining Composables unchanged ---
-@SuppressLint("UnsafeOptInUsageError")
-@Composable
-fun ExpiryScanner(onResult: (String) -> Unit, onClose: () -> Unit) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    var cameraProvider: ProcessCameraProvider? by remember { mutableStateOf(null) }
-    val cameraExecutor: ExecutorService = remember { Executors.newSingleThreadExecutor() }
-
-    var hasPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
-                    == PackageManager.PERMISSION_GRANTED
-        )
-    }
-
-    if (!hasPermission) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Camera permission is required to scan.", color = Color.White)
-        }
-        return
-    }
-
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        AndroidView(factory = { ctx ->
-            val previewView = PreviewView(ctx)
-
-            val preview = androidx.camera.core.Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
-            }
-
-            val analyzer = ImageAnalysis.Builder().build().also {
-                it.setAnalyzer(cameraExecutor) { imageProxy ->
-                    CoroutineScope(Dispatchers.Default).launch {
-                        processImage(imageProxy) { detected ->
-                            launch(Dispatchers.Main) { onResult(detected) }
-                        }
-                        imageProxy.close()
-                    }
-                }
-            }
-
-            val selector = CameraSelector.DEFAULT_BACK_CAMERA
-            cameraProvider?.unbindAll()
-            cameraProvider?.bindToLifecycle(lifecycleOwner, selector, preview, analyzer)
-
-            previewView
-        }, modifier = Modifier.fillMaxSize())
-
-        FloatingActionButton(
-            onClick = onClose,
-            containerColor = Color.Red,
-            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
-        ) {
-            Icon(Icons.Default.Close, contentDescription = "Close")
-        }
-
-        Text(
-            text = "Scanning expiry date...",
-            color = Color.White,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(24.dp)
-        )
-    }
-}
-
-private suspend fun processImage(imageProxy: ImageProxy, onTextDetected: (String) -> Unit) {
-    withContext(Dispatchers.Default) {
-        try {
-            val fakeDetectedText = "12/2025"
-            val expiryPattern = Pattern.compile("(0[1-9]|1[0-2])/20\\d{2}")
-            val matcher = expiryPattern.matcher(fakeDetectedText)
-            if (matcher.find()) {
-                onTextDetected(matcher.group(0)!!)
-            }
-        } catch (e: Exception) {
-            Log.e("ExpiryScanner", "Error processing image", e)
         }
     }
 }
@@ -369,14 +284,15 @@ fun GradientButton(text: String, icon: ImageVector, gradient: Brush, onClick: ()
 
 @Composable
 fun MarqueeText(text: String) {
-    val infiniteTransition = rememberInfiniteTransition()
+    val infiniteTransition = rememberInfiniteTransition(label = "marquee")
     val translateX by infiniteTransition.animateFloat(
         initialValue = 1000f,
         targetValue = -1000f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 15000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
-        )
+        ),
+        label = "translateX"
     )
     Box(
         modifier = Modifier
@@ -397,7 +313,6 @@ fun MarqueeText(text: String) {
 @Composable
 fun HomeBottomNavigation(
     navController: NavController,
-    showScanner: () -> Unit,
     onProfileClick: () -> Unit
 ) {
     NavigationBar(containerColor = tripleSeven) {
@@ -421,7 +336,7 @@ fun HomeBottomNavigation(
                 )
             },
             selected = false,
-            onClick = { showScanner() }
+            onClick = { navController.navigate(ROUT_SCANMEDICINE) }
         )
         NavigationBarItem(
             icon = {
@@ -432,7 +347,7 @@ fun HomeBottomNavigation(
                 )
             },
             selected = false,
-            onClick = { navController.navigate(ROUT_PROFILESETTINS) }
+            onClick = { onProfileClick() }
         )
     }
 }
@@ -440,5 +355,7 @@ fun HomeBottomNavigation(
 @Preview(showBackground = true)
 @Composable
 fun PreviewHomeScreen() {
-    HomeScreen(navController = rememberNavController())
+    HealthShield254Theme {
+        HomeScreen(navController = rememberNavController())
+    }
 }

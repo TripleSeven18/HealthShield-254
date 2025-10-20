@@ -30,7 +30,7 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.database.*
 import com.triple7.healthshield254.R
-import com.triple7.healthshield254.navigation.ROUT_CHATBOARDCHSCREEN
+import com.triple7.healthshield254.navigation.ROUT_CHATBOARDSCREEN
 import com.triple7.healthshield254.navigation.ROUT_HOME
 
 data class MedicineUpload(
@@ -123,7 +123,7 @@ fun MedicineScreen(navController: NavController) {
                 )
                 NavigationBarItem(
                     selected = false,
-                    onClick = { navController.navigate(ROUT_CHATBOARDCHSCREEN) },
+                    onClick = { navController.navigate(ROUT_CHATBOARDSCREEN) },
                     icon = { Icon(painter = painterResource(id = R.drawable.consultation),
                         contentDescription = "Consultation", tint = Color.Black,
                         modifier = Modifier.size(32.dp),

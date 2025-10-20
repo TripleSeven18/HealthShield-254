@@ -1,12 +1,10 @@
-package com.triple7.healthshield254.ui.screens.dashboard
+package com.triple7.healthshield254.ui.screens.hotspotmap
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
@@ -15,98 +13,133 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.*
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.heatmap.Heatmap
+import com.google.maps.android.heatmaps.WeightedLatLng
+import com.triple7.healthshield254.R
+import com.triple7.healthshield254.ui.theme.HealthShield254Theme
+import com.triple7.healthshield254.ui.theme.tripleSeven
+import kotlinx.coroutines.launch
+
+// --- Data Models ---
+data class HotspotLocation(val name: String = "", val lat: Double = 0.0, val lng: Double = 0.0, val intensity: Double = 1.0)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HotspotMapScreen(navController: NavController) {
-    val activities = listOf(
-        ActivityItem("Walking", Icons.Filled.Info, Color(0xFF6DD5FA)), //DirectionsWalk icon
-        ActivityItem("Cycling", Icons.Filled.Info, Color(0xFFFFC371)), //DirectionsBike icon
-        ActivityItem("Driving", Icons.Filled.Info, Color(0xFFFF6B6B)), //DirectionsCar icon
-        ActivityItem("Train", Icons.Filled.Info, Color(0xFF42A5F5)), //Train icon
-        ActivityItem("Hiking", Icons.Filled.Info, Color(0xFF81C784)), //Hiking icon
-        ActivityItem("Flight", Icons.Filled.Info, Color(0xFFBA68C8)) //Flight icon
-    )
+    val context = LocalContext.current
+    val inPreview = LocalInspectionMode.current
+    val coroutineScope = rememberCoroutineScope()
+
+    // --- State Management ---
+    val user = FirebaseAuth.getInstance().currentUser
+    val userName = remember(user) {
+        user?.displayName?.takeIf { it.isNotBlank() } ?: user?.email?.split('@')?.get(0)?.replaceFirstChar { it.uppercase() } ?: "User"
+    }
+    var hotspots by remember { mutableStateOf<List<WeightedLatLng>>(emptyList()) }
+    var locationCards by remember { mutableStateOf<List<HotspotLocation>>(emptyList()) }
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(LatLng(-1.286389, 36.817223), 6f) // Default to Kenya
+    }
+
+    // --- Data Fetching & Seeding ---
+    LaunchedEffect(Unit) {
+        if (!inPreview) {
+            seedHotspotDataToFirebase()
+            val database = FirebaseDatabase.getInstance().getReference("hotspots")
+            database.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val locations = snapshot.children.mapNotNull { it.getValue(HotspotLocation::class.java) }
+                    locationCards = locations
+                    hotspots = locations.map { WeightedLatLng(LatLng(it.lat, it.lng), it.intensity) }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    // Log or handle the error appropriately
+                }
+            })
+        }
+    }
 
     Scaffold(
-        containerColor = Color(0xFFF8F8F8),
-        bottomBar = { ModernBottomNav() }
+        containerColor = Color(0xFFF8F8F8)
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(Brush.verticalGradient(listOf(tripleSeven.copy(alpha = 0.1f), Color.Transparent)))
                 .padding(padding)
         ) {
-            // HEADER
+            // --- Google Map with Heatmap ---
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(220.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(Color(0xFFFF5F6D), Color(0xFFFFC371))
-                        )
-                    )
-                    .clip(RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp))
-                    .padding(24.dp)
+                    .height(300.dp)
+                    .clip(RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp))
             ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "Good Morning,",
-                        color = Color.White.copy(alpha = 0.9f),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = "Satwik Pachino ☀️",
-                        color = Color.White,
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.End)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color.White.copy(alpha = 0.25f))
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                if (inPreview) {
+                    Box(modifier = Modifier.fillMaxSize().background(Color.Gray), contentAlignment = Alignment.Center) {
+                        Text("Map Placeholder for Preview", color = Color.White)
+                    }
+                } else {
+                    val mapStyle: MapStyleOptions? = remember {
+                        MapStyleOptions.loadRawResourceStyle(context, R.raw.spreadpositivity)
+                    }
+                    GoogleMap(
+                        modifier = Modifier.fillMaxSize(),
+                        cameraPositionState = cameraPositionState,
+                        properties = MapProperties(mapStyleOptions = mapStyle)
                     ) {
-                        Text("21°C • Cloudy", color = Color.White, fontWeight = FontWeight.Medium)
+                        if (hotspots.isNotEmpty()) {
+                            Heatmap(points = hotspots, radius = 50)
+                        }
                     }
                 }
             }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(16.dp))
 
-            Text(
-                text = "Start a new journey",
-                modifier = Modifier.padding(horizontal = 24.dp),
-                color = Color.Black,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-            )
+            // --- Greeting ---
+            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                Text(text = "Good Morning,", style = MaterialTheme.typography.titleMedium)
+                Text(text = userName, style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
+            }
 
             Spacer(Modifier.height(16.dp))
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxHeight()
+            // --- Location Cards ---
+            Text(
+                text = "Counterfeit Hotspots",
+                modifier = Modifier.padding(horizontal = 24.dp),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
+            Spacer(Modifier.height(8.dp))
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(activities) { item ->
-                    JourneyCard(item)
+                items(locationCards) { location ->
+                    LocationCard(location) {
+                        coroutineScope.launch {
+                            cameraPositionState.animate(com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(LatLng(location.lat, location.lng), 12f))
+                        }
+                    }
                 }
             }
         }
@@ -114,85 +147,54 @@ fun HotspotMapScreen(navController: NavController) {
 }
 
 @Composable
-fun JourneyCard(item: ActivityItem) {
-    var isPressed by remember { mutableStateOf(false) }
-    val bgColor by animateColorAsState(
-        targetValue = if (isPressed) item.color.copy(alpha = 0.9f) else Color.White,
-        label = "cardColor"
-    )
-
+fun LocationCard(location: HotspotLocation, onClick: () -> Unit) {
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(140.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .shadow(6.dp, RoundedCornerShape(20.dp))
-            .clickable {
-                isPressed = !isPressed
-            },
-        colors = CardDefaults.cardColors(containerColor = bgColor)
+            .width(150.dp)
+            .height(100.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = tripleSeven.copy(alpha = 0.8f))
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = item.icon,
-                contentDescription = item.title,
-                tint = if (isPressed) Color.White else item.color,
-                modifier = Modifier.size(48.dp)
-            )
-            Spacer(Modifier.height(10.dp))
-            Text(
-                text = item.title,
-                color = if (isPressed) Color.White else Color.Black,
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-            )
+            Icon(Icons.Default.Info, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))  //LocationCity Icon
+            Spacer(Modifier.height(8.dp))
+            Text(location.name, color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
         }
     }
 }
 
-@Composable
-fun ModernBottomNav() {
-    NavigationBar(
-        containerColor = Color.White,
-        tonalElevation = 8.dp
-    ) {
-        val items = listOf("Home", "Friends", "Stats", "Profile")
-        items.forEachIndexed { index, label ->
-            NavigationBarItem(
-                selected = index == 0,
-                onClick = {},
-                icon = {
-                    Icon(
-                        imageVector = when (label) {
-                            "Friends" -> Icons.Default.Info//Hiking icon
-                            "Stats" -> Icons.Default.Info//Train Icon
-                            "Profile" -> Icons.Default.Info//DirectionsBike icon
-                            else -> Icons.Default.Info//DirectionsWalk
-                        },
-                        contentDescription = label
-                    )
-                },
-                label = { Text(label) },
-                alwaysShowLabel = true
-            )
+private fun seedHotspotDataToFirebase() {
+    val dbRef = FirebaseDatabase.getInstance().getReference("hotspots")
+    dbRef.addListenerForSingleValueEvent(object : ValueEventListener {
+        override fun onDataChange(snapshot: DataSnapshot) {
+            if (!snapshot.exists()) {
+                val initialHotspots = listOf(
+                    HotspotLocation("Nairobi", -1.286389, 36.817223, 100.0),
+                    HotspotLocation("Mombasa", -4.043477, 39.668205, 85.0),
+                    HotspotLocation("Kisumu", -0.091702, 34.767956, 70.0),
+                    HotspotLocation("Nakuru", -0.303099, 36.080025, 50.0),
+                    HotspotLocation("Eldoret", 0.5143, 35.2698, 40.0),
+                    HotspotLocation("Malindi", -3.2199, 40.1164, 25.0)
+                )
+                initialHotspots.forEach { dbRef.child(it.name).setValue(it) }
+            }
         }
-    }
-}
 
-data class ActivityItem(
-    val title: String,
-    val icon: ImageVector,
-    val color: Color
-)
+        override fun onCancelled(error: DatabaseError) {
+            // Log or handle the error appropriately
+        }
+    })
+}
 
 @Preview(showBackground = true)
 @Composable
 fun PreviewHotspotMapScreen() {
-    HotspotMapScreen(rememberNavController())
+    HealthShield254Theme {
+        HotspotMapScreen(rememberNavController())
+    }
 }
