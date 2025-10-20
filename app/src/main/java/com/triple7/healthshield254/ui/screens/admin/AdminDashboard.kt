@@ -21,6 +21,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.triple7.healthshield254.navigation.ROUT_UPLOADMEDICINE
 import com.triple7.healthshield254.navigation.ROUT_VIEWREPORT
+import com.triple7.healthshield254.ui.theme.tripleSeven
 
 @Composable
 fun AdminScreen(navController: NavController) {
@@ -45,8 +46,8 @@ fun AdminScreen(navController: NavController) {
             // Header
             Text(
                 text = "HealthShield Admin Dashboard",
-                color = Color(0xFF00BCD4),
                 fontSize = 22.sp,
+                color = tripleSeven,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )

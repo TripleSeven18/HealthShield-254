@@ -177,11 +177,9 @@ fun HomeScreen(navController: NavController) {
             // --- Dashboard Cards (Horizontally Scrollable, Two per Column) ---
             val dashboardItems = listOf(
                 Triple("Hotspot Map", R.drawable.hotspotmap, Color(0xFFFFC107)),
-                Triple("View Reports", R.drawable.viewreport, Color(0xFF03A9F4)),
-                Triple("Crowdsourcing Hub", R.drawable.crowdsourcing, Color(0xFF9C27B0)),
+                Triple("Report counterfeit", R.drawable.reportcounterfeit, Color(0xFF03A9F4)),
                 Triple("Medicine", R.drawable.medicine, Color(0xFFFF5722)),
-                Triple("Report Medicine", R.drawable.reportmedicine, Color(0xFF8BC34A)),
-                Triple("Report Screen", R.drawable.reportscreen, Color(0xFF607D8B)),
+                Triple("Profile & Settings", R.drawable.profile, Color(0xFF607D8B)),
                 Triple("Place Order", R.drawable.placeorder, Color(0xFFFF9800)),
                 Triple("Supplier Manufacturer", R.drawable.supplier, Color(0xFF009688)),
                 Triple("Analytics Screen", R.drawable.supplier, Color(0xFF3F51B5)),
@@ -209,17 +207,15 @@ fun HomeScreen(navController: NavController) {
                                 onClick = {
                                     when (title) {
                                         "Hotspot Map" -> navController.navigate(ROUT_HOTSPOTMAP)
-                                        "View Reports" -> navController.navigate(ROUT_SENDREPORT)
-                                        "Crowdsourcing Hub" -> navController.navigate(ROUT_CROWDSOURCING)
+                                        "Report counterfeit" -> navController.navigate(ROUT_SENDREPORT)
                                         "Medicine" -> navController.navigate(ROUT_MEDICINE)
-                                        "Report Medicine" -> navController.navigate(ROUT_REPORTMEDICINE)
-                                        "Report Screen" -> navController.navigate(ROUT_SENDREPORT)
                                         "Place Order" -> navController.navigate(ROUT_PLACEORDER)
                                         "Supplier Manufacturer" -> navController.navigate(ROUT_SUPPLIERMANUFACTURER)
                                         "Analytics Screen" -> navController.navigate(ROUT_ANALYTIVCSCREEN)
                                         "ChatBoard Screen" -> navController.navigate(ROUT_CHATBOARDCHSCREEN)
                                         "Admin Screen" -> navController.navigate(ROUT_ADMIN)
                                         "Upload-Medicine Screen" -> navController.navigate(ROUT_UPLOADMEDICINE)
+                                        "Profile & Settings" -> navController.navigate(ROUT_PROFILESETTINS)
                                     }
                                 }
                             )

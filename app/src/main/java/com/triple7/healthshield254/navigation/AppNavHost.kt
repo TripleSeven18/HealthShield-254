@@ -15,9 +15,7 @@ import com.triple7.healthshield254.ui.screens.auth.LaunchScreen
 import com.triple7.healthshield254.ui.screens.auth.LoginScreen
 import com.triple7.healthshield254.ui.screens.auth.RegistrationScreen
 import com.triple7.healthshield254.ui.screens.chat.ChatBoardScreen
-import com.triple7.healthshield254.ui.screens.crowdsourcinghub.CrowdsourcingHubScreen
 import com.triple7.healthshield254.ui.screens.dashboard.HotspotMapScreen
-import com.triple7.healthshield254.ui.screens.educationalhub.EducationalHubScreen
 import com.triple7.healthshield254.ui.screens.home.HomeScreen
 import com.triple7.healthshield254.ui.screens.onboarding.Onboarding1
 import com.triple7.healthshield254.ui.screens.onboarding.Onboarding2
@@ -72,14 +70,6 @@ fun AppNavHost(
             UploadMedicineScreen(navController)
         }
 
-
-        composable(ROUT_CROWDSOURCING) {
-            CrowdsourcingHubScreen(navController)
-        }
-
-        composable(ROUT_EDUCATIONALHUB) {
-            EducationalHubScreen(navController)
-        }
         composable(ROUT_ADMIN) {
             AdminScreen(navController)
         }
