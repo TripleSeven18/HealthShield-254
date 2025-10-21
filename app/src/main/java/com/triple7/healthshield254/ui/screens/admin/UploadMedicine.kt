@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
@@ -35,6 +36,7 @@ import com.google.firebase.storage.FirebaseStorage
 import com.triple7.healthshield254.ui.theme.HealthShield254Theme
 import com.triple7.healthshield254.ui.theme.tripleSeven
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.util.*
 
 // Data model for medicine
@@ -69,7 +71,6 @@ fun UploadMedicineScreen(navController: NavController) {
     var isDropdownExpanded by remember { mutableStateOf(false) }
 
     // This will run once to populate your database with the initial set of medicines.
-    // You can remove this LaunchedEffect after running the app once.
     LaunchedEffect(Unit) {
         if (!inPreview) {
             seedInitialMedicinesToFirebase()
@@ -92,12 +93,10 @@ fun UploadMedicineScreen(navController: NavController) {
         }
     }
 
-    // Image picker launcher
     val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        imageUri = uri
-    }
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? -> imageUri = uri }
+    )
 
     val clearForm = {
         name = ""
@@ -107,13 +106,6 @@ fun UploadMedicineScreen(navController: NavController) {
         warnings = ""
         imageUri = null
     }
-
-    val gradientBrush = Brush.verticalGradient(
-        listOf(
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-            MaterialTheme.colorScheme.background
-        )
-    )
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -127,7 +119,7 @@ fun UploadMedicineScreen(navController: NavController) {
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary, // Typo fixed
                     navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
@@ -136,7 +128,7 @@ fun UploadMedicineScreen(navController: NavController) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(color = tripleSeven)
+                .background(color = tripleSeven) // Using your specified background color
                 .padding(paddingValues)
         ) {
             Column(
@@ -176,7 +168,7 @@ fun UploadMedicineScreen(navController: NavController) {
                                 verticalArrangement = Arrangement.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Info, //AddAPhoto icon
+                                    imageVector = Icons.Default.Info, // AddAPhoto Icon
                                     contentDescription = "Upload Icon",
                                     modifier = Modifier.size(50.dp),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -200,8 +192,6 @@ fun UploadMedicineScreen(navController: NavController) {
                     elevation = CardDefaults.cardElevation(4.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-
-                        // Autocomplete Medicine Name
                         ExposedDropdownMenuBox(
                             expanded = isDropdownExpanded,
                             onExpandedChange = { isDropdownExpanded = !isDropdownExpanded }
@@ -210,9 +200,7 @@ fun UploadMedicineScreen(navController: NavController) {
                                 value = name,
                                 onValueChange = {
                                     name = it
-                                    filteredMedicines = allMedicines.filter {
-                                        it.name.contains(name, ignoreCase = true)
-                                    }
+                                    filteredMedicines = allMedicines.filter { med -> med.name.contains(name, ignoreCase = true) }
                                     isDropdownExpanded = true
                                 },
                                 label = "Medicine Name",
@@ -222,7 +210,7 @@ fun UploadMedicineScreen(navController: NavController) {
 
                             ExposedDropdownMenu(
                                 expanded = isDropdownExpanded && filteredMedicines.isNotEmpty(),
-                                onDismissRequest = { isDropdownExpanded = false } 
+                                onDismissRequest = { isDropdownExpanded = false }
                             ) {
                                 filteredMedicines.forEach { medicine ->
                                     DropdownMenuItem(
@@ -241,84 +229,59 @@ fun UploadMedicineScreen(navController: NavController) {
                         }
 
                         Spacer(modifier = Modifier.height(8.dp))
-                        UploadTextField(
-                            value = dosage,
-                            onValueChange = { dosage = it },
-                            label = "Dosage",
-                            enabled = !isUploading
-                        )
+                        UploadTextField(value = dosage, onValueChange = { dosage = it }, label = "Dosage", enabled = !isUploading)
                         Spacer(modifier = Modifier.height(8.dp))
-                        UploadTextField(
-                            value = instructions,
-                            onValueChange = { instructions = it },
-                            label = "Instructions",
-                            enabled = !isUploading
-                        )
+                        UploadTextField(value = instructions, onValueChange = { instructions = it }, label = "Instructions", enabled = !isUploading)
                         Spacer(modifier = Modifier.height(8.dp))
-                        UploadTextField(
-                            value = sideEffects,
-                            onValueChange = { sideEffects = it },
-                            label = "Side Effects",
-                            enabled = !isUploading
-                        )
+                        UploadTextField(value = sideEffects, onValueChange = { sideEffects = it }, label = "Side Effects", enabled = !isUploading)
                         Spacer(modifier = Modifier.height(8.dp))
-                        UploadTextField(
-                            value = warnings,
-                            onValueChange = { warnings = it },
-                            label = "Warnings",
-                            enabled = !isUploading
-                        )
+                        UploadTextField(value = warnings, onValueChange = { warnings = it }, label = "Warnings", enabled = !isUploading)
                     }
                 }
-
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Submit Button
+                // --- SUBMIT BUTTON WITH ROBUST UPLOAD LOGIC ---
                 Button(
                     onClick = {
-                        if (inPreview) return@Button
-                        if (name.isBlank() || dosage.isBlank() || imageUri == null) {
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Please fill all fields and select an image.")
-                            }
+                        if (inPreview || imageUri == null || name.isBlank()) {
+                            coroutineScope.launch { snackbarHostState.showSnackbar("Please fill all fields and select an image.") }
                             return@Button
                         }
 
-                        isUploading = true
-                        uploadMedicineToFirebase(
-                            imageUri = imageUri!!,
-                            medicine = MedicineUpload(name, dosage, instructions, sideEffects, warnings),
-                            onSuccess = {
-                                isUploading = false
-                                coroutineScope.launch {
-                                    snackbarHostState.showSnackbar("Medicine uploaded successfully!")
-                                }
+                        coroutineScope.launch {
+                            isUploading = true
+                            try {
+                                // 1. Upload image and get URL
+                                val imageUrl = uploadImageToFirebase(imageUri!!)
+
+                                // 2. Create medicine data object
+                                val medicineData = MedicineUpload(name, dosage, instructions, sideEffects, warnings, imageUrl)
+
+                                // 3. Save to Realtime Database
+                                val dbRef = FirebaseDatabase.getInstance().getReference("medicines")
+                                val id = dbRef.push().key!!
+                                dbRef.child(id).setValue(medicineData).await()
+
+                                // 4. Show success and clear form
+                                snackbarHostState.showSnackbar("Medicine uploaded successfully!")
                                 clearForm()
-                            },
-                            onFailure = { exception ->
+
+                            } catch (e: Exception) {
+                                // 5. Show failure message
+                                snackbarHostState.showSnackbar("Upload failed: ${e.message}")
+                            } finally {
                                 isUploading = false
-                                coroutineScope.launch {
-                                    snackbarHostState.showSnackbar("Upload failed: ${exception.message}")
-                                }
                             }
-                        )
+                        }
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    enabled = !isUploading,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    enabled = !isUploading
                 ) {
                     if (isUploading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp
-                        )
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
                     } else {
-                        Text("Upload Medicine", color = MaterialTheme.colorScheme.onPrimary)
+                        Text("Upload Medicine")
                     }
                 }
             }
@@ -326,147 +289,24 @@ fun UploadMedicineScreen(navController: NavController) {
     }
 }
 
-private fun seedInitialMedicinesToFirebase() {
-    val medicinesToSeed = listOf(
-        MedicineUpload(
-            name = "Paracetamol",
-            dosage = "500 mg to 1000 mg every 4 to 6 hours as needed.",
-            instructions = "Can be taken with or without food. Swallow whole with water. Avoid alcohol.",
-            sideEffects = "Nausea, upset stomach, rash. Serious: Liver damage (with overdose), severe allergic reaction.",
-            warnings = "Do NOT take if you have severe liver disease or are taking other paracetamol products."
-        ),
-        MedicineUpload(
-            name = "Ibuprofen",
-            dosage = "200–400 mg every 6 hours as needed. Max: 1200 mg/day.",
-            instructions = "Take with food or milk to prevent stomach upset.",
-            sideEffects = "Stomach pain, heartburn, nausea, dizziness.",
-            warnings = "Avoid if you have stomach ulcers, kidney disease, or heart failure. Do not combine with alcohol or other NSAIDs."
-        ),
-        MedicineUpload(
-            name = "Amoxicillin",
-            dosage = "500 mg every 8 hours or 875 mg every 12 hours for 7–10 days.",
-            instructions = "Take with or without food, complete the full course even if you feel better.",
-            sideEffects = "Diarrhea, nausea, rash, yeast infection.",
-            warnings = "Avoid if allergic to penicillin. Tell your doctor if you have kidney problems."
-        ),
-        MedicineUpload(
-            name = "Metformin",
-            dosage = "Typical: 500 mg once or twice daily with meals.",
-            instructions = "Take with meals to reduce stomach upset.",
-            sideEffects = "Diarrhea, nausea, metallic taste, low vitamin B12 with long-term use.",
-            warnings = "Do not use if you have severe kidney or liver disease. Avoid alcohol—can cause lactic acidosis."
-        ),
-        MedicineUpload(
-            name = "Loratadine",
-            dosage = "Adults & children over 12: 10 mg once daily.",
-            instructions = "Take once daily, with or without food.",
-            sideEffects = "Sleepiness (rare), headache, dry mouth.",
-            warnings = "Use caution if you have liver disease. Avoid alcohol or sedatives."
-        ),
-        MedicineUpload(
-            name = "Omeprazole",
-            dosage = "Adults: 20–40 mg once daily before meals for 14–28 days.",
-            instructions = "Swallow whole before breakfast, do not crush or chew.",
-            sideEffects = "Headache, constipation, nausea, abdominal pain.",
-            warnings = "Long-term use may cause vitamin B12 deficiency, bone weakness, or kidney issues."
-        ),
-        MedicineUpload(
-            name = "Salbutamol (Albuterol)",
-            dosage = "Inhaler: 1–2 puffs every 4–6 hours as needed.",
-            instructions = "Shake inhaler before use; inhale deeply; rinse mouth afterward.",
-            sideEffects = "Tremor, rapid heartbeat, nervousness, headache.",
-            warnings = "Do not exceed dose. Seek help if breathing worsens."
-        ),
-        MedicineUpload(
-            name = "Cetirizine",
-            dosage = "Adults & children over 12: 10 mg once daily.",
-            instructions = "Take once daily, preferably in the evening.",
-            sideEffects = "Drowsiness, dry mouth, fatigue.",
-            warnings = "Avoid alcohol and driving if drowsy. Use cautiously with kidney or liver disease."
-        ),
-        MedicineUpload(
-            name = "Diclofenac",
-            dosage = "Adults: 50 mg every 8 hours as needed. Max: 150 mg/day.",
-            instructions = "Take with food to avoid stomach upset.",
-            sideEffects = "Stomach pain, nausea, dizziness, heartburn.",
-            warnings = "Avoid with ulcers, heart disease, kidney problems, or other NSAIDs."
-        )
-    )
-
-    val dbRef = FirebaseDatabase.getInstance().getReference("medicines")
-    dbRef.addListenerForSingleValueEvent(object : ValueEventListener {
-        override fun onDataChange(snapshot: DataSnapshot) {
-            medicinesToSeed.forEach { medicineToSeed ->
-                // Check if a medicine with the same name already exists
-                val alreadyExists = snapshot.children.any { 
-                    it.getValue(MedicineUpload::class.java)?.name?.equals(medicineToSeed.name, ignoreCase = true) == true
-                }
-                if (!alreadyExists) {
-                    val id = dbRef.push().key!!
-                    dbRef.child(id).setValue(medicineToSeed)
-                }
-            }
-        }
-        override fun onCancelled(error: DatabaseError) { /* Handle error */ }
-    })
-}
-
-private fun uploadMedicineToFirebase(
-    imageUri: Uri,
-    medicine: MedicineUpload,
-    onSuccess: () -> Unit,
-    onFailure: (Exception) -> Unit
-) {
+// --- NEW ROBUST UPLOAD FUNCTION ---
+suspend fun uploadImageToFirebase(imageUri: Uri): String {
     val storageRef = FirebaseStorage.getInstance().reference
-    val dbRef = FirebaseDatabase.getInstance().getReference("medicines")
-
     val imageFileName = "images/${UUID.randomUUID()}.jpg"
     val imageRef = storageRef.child(imageFileName)
 
-    val uploadTask = imageRef.putFile(imageUri)
-
-    uploadTask.continueWithTask { task ->
-        if (!task.isSuccessful) {
-            task.exception?.let {
-                throw it
-            }
-        }
-        imageRef.downloadUrl
-    }.addOnCompleteListener { task ->
-        if (task.isSuccessful) {
-            val downloadUri = task.result
-            val medicineWithUrl = medicine.copy(imageUrl = downloadUri.toString())
-            val id = dbRef.push().key
-
-            if (id != null) {
-                dbRef.child(id).setValue(medicineWithUrl)
-                    .addOnSuccessListener { onSuccess() }
-                    .addOnFailureListener { onFailure(it) }
-            } else {
-                onFailure(Exception("Could not generate a key for the database entry."))
-            }
-        } else {
-            task.exception?.let { 
-                onFailure(it) 
-            }
-        }
-    }
+    // Upload the file and wait for the operation to complete
+    imageRef.putFile(imageUri).await()
+    // Get the download URL and wait for it
+    return imageRef.downloadUrl.await().toString()
 }
 
 
 @Composable
 fun UploadTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    enabled: Boolean,
-    modifier: Modifier = Modifier
-) {
+    value: String, onValueChange: (String) -> Unit, label: String, enabled: Boolean, modifier: Modifier = Modifier) {
     var isFocused by remember { mutableStateOf(false) }
-    val borderColor by animateColorAsState(
-        targetValue = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-        label = "borderColor"
-    )
+    val borderColor by animateColorAsState(targetValue = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline, label = "")
 
     OutlinedTextField(
         value = value,
@@ -485,6 +325,33 @@ fun UploadTextField(
             unfocusedLabelColor = MaterialTheme.colorScheme.outline
         )
     )
+}
+
+private fun seedInitialMedicinesToFirebase() {
+    val medicinesToSeed = listOf(
+        MedicineUpload("Paracetamol", "500mg", "Take 1-2 tablets every 4-6 hours.", "Nausea, stomach pain.", "Do not exceed 8 tablets in 24 hours."),
+        MedicineUpload("Ibuprofen", "200mg", "Take with food.", "Heartburn, dizziness.", "Avoid if you have stomach ulcers.")
+        // Add more initial medicines here
+    )
+
+    val dbRef = FirebaseDatabase.getInstance().getReference("medicines")
+    dbRef.addListenerForSingleValueEvent(object : ValueEventListener {
+        override fun onDataChange(snapshot: DataSnapshot) {
+            if (snapshot.childrenCount < medicinesToSeed.size) { // Simple check to avoid re-seeding
+                medicinesToSeed.forEach { medicine ->
+                    // Check if a medicine with the same name already exists to be more robust
+                    val alreadyExists = snapshot.children.any { 
+                        it.getValue(MedicineUpload::class.java)?.name?.equals(medicine.name, ignoreCase = true) == true 
+                    }
+                    if (!alreadyExists) {
+                         val id = dbRef.push().key!!
+                         dbRef.child(id).setValue(medicine)
+                    }
+                }
+            }
+        }
+        override fun onCancelled(error: DatabaseError) {}
+    })
 }
 
 @Preview(showBackground = true)

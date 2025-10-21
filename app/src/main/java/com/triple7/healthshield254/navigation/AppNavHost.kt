@@ -6,19 +6,20 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.triple7.healthshield254.ui.screens.TradeCenter.AnalyticsScreen
 import com.triple7.healthshield254.ui.screens.TradeCenter.PlaceOrderScreen
 import com.triple7.healthshield254.ui.screens.TradeCenter.SupplierManufacturerDashboard
 import com.triple7.healthshield254.ui.screens.admin.AdminScreen
 import com.triple7.healthshield254.ui.screens.admin.UploadMedicineScreen
-import com.triple7.healthshield254.ui.screens.analytics.AnalyticsScreen
 import com.triple7.healthshield254.ui.screens.auth.LaunchScreen
 import com.triple7.healthshield254.ui.screens.auth.LoginScreen
 import com.triple7.healthshield254.ui.screens.auth.RegistrationScreen
 import com.triple7.healthshield254.ui.screens.chat.ChatBoardScreen
-import com.triple7.healthshield254.ui.screens.dashboard.HotspotMapScreen
 import com.triple7.healthshield254.ui.screens.home.HomeScreen
+import com.triple7.healthshield254.ui.screens.hotspotmap.HotspotMapScreen
 import com.triple7.healthshield254.ui.screens.onboarding.Onboarding1
 import com.triple7.healthshield254.ui.screens.onboarding.Onboarding2
+import com.triple7.healthshield254.ui.screens.profilesettings.EditProfile
 import com.triple7.healthshield254.ui.screens.profilesettings.ProfileSettingsScreen
 import com.triple7.healthshield254.ui.screens.reportmedicine.MedicineScreen
 import com.triple7.healthshield254.ui.screens.reportmedicine.ReportScreen
@@ -78,6 +79,10 @@ fun AppNavHost(
 
         composable(ROUT_HOTSPOTMAP) {
             HotspotMapScreen(navController)
+        }
+
+        composable(ROUT_EDITPROFILE) {
+            EditProfile(navController)
         }
 
         composable(ROUT_PROFILESETTINS) {

@@ -1,13 +1,13 @@
-package com.triple7.healthshield254.ui.screens.analytics
+package com.triple7.healthshield254.ui.screens.TradeCenter
 
+import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,25 +23,30 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.google.firebase.database.*
+import com.triple7.healthshield254.R
+import com.triple7.healthshield254.ui.theme.HealthShield254Theme
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.roundToInt
 
-// --- Color Palette Definition (Option 1: Professional & Trustworthy Blue) ---
-val HealthShieldBlue = Color(0xFF007BFF) // Primary professional blue
-val HealthShieldTextDark = Color(0xFF1A2E35) // Dark, readable text
-val HealthShieldBackgroundLight = Color(0xFFF4F7F9) // Clean, off-white background
-val HealthShieldSuccess = Color(0xFF28A745) // Green for success/positive stats
-val HealthShieldWarning = Color(0xFFDC3545) // Red for critical alerts
-val HealthShieldAccentTeal = Color(0xFF00BFA6) // Secondary accent for vibrancy
+// --- Color Palette Definition ---
+val HealthShieldBlue = Color(0xFF007BFF)
+val HealthShieldTextDark = Color(0xFF1A2E35)
+val HealthShieldBackgroundLight = Color(0xFFF4F7F9)
+val HealthShieldWarning = Color(0xFFDC3545)
+val HealthShieldAccentTeal = Color(0xFF00BFA6)
+val HealthShieldOrange = Color(0xFFFFA726)
+
 
 /* --------------------------------------------------------------------------
    📊 Data Model
 -------------------------------------------------------------------------- */
 data class AnalyticsSummary(
     val totalOrders: Int = 0,
-    val totalReports: Int = 0,
     val fakeDistributors: Int = 0,
     val criticalCases: Int = 0,
     val averagePrice: Double = 0.0,
@@ -57,15 +61,12 @@ class AnalyticsViewModel : ViewModel() {
     private val _summary = mutableStateOf(AnalyticsSummary())
     val summary: State<AnalyticsSummary> get() = _summary
 
-    // Firebase database references. These will be used to attach listeners.
     private var ordersRef: DatabaseReference? = null
-    private var reportsRef: DatabaseReference? = null
     private var fakeRef: DatabaseReference? = null
 
-    // ValueEventListeners automatically trigger on data changes, enabling real-time updates.
     private val ordersListener = object : ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
-            val prices = snapshot.children.mapNotNull { it.child("price").getValue(Double::class.java) }
+            val prices = snapshot.children.mapNotNull { it.child("product").child("price").getValue(Double::class.java) }
             val avg = if (prices.isNotEmpty()) prices.average() else 0.0
             _summary.value = _summary.value.copy(
                 totalOrders = snapshot.childrenCount.toInt(),
@@ -73,17 +74,7 @@ class AnalyticsViewModel : ViewModel() {
                 lastUpdated = System.currentTimeMillis()
             )
         }
-        override fun onCancelled(error: DatabaseError) { /* Handle error */ }
-    }
-
-    private val reportsListener = object : ValueEventListener {
-        override fun onDataChange(snapshot: DataSnapshot) {
-            _summary.value = _summary.value.copy(
-                totalReports = snapshot.childrenCount.toInt(),
-                lastUpdated = System.currentTimeMillis()
-            )
-        }
-        override fun onCancelled(error: DatabaseError) { /* Handle error */ }
+        override fun onCancelled(error: DatabaseError) { Log.e("AnalyticsViewModel", "Orders listener cancelled", error.toException()) }
     }
 
     private val fakeListener = object : ValueEventListener {
@@ -97,40 +88,27 @@ class AnalyticsViewModel : ViewModel() {
                 lastUpdated = System.currentTimeMillis()
             )
         }
-        override fun onCancelled(error: DatabaseError) { /* Handle error */ }
+        override fun onCancelled(error: DatabaseError) { Log.e("AnalyticsViewModel", "Fake reports listener cancelled", error.toException()) }
     }
 
-    /**
-     * Initializes and attaches real-time listeners to Firebase database references.
-     * This function is the core of the real-time data fetching mechanism.
-     */
     fun startListening() {
-        if (ordersRef != null) return // Listeners already active
+        if (ordersRef != null) return
         try {
             val db = FirebaseDatabase.getInstance()
             ordersRef = db.getReference("orders")
-            reportsRef = db.getReference("reports")
             fakeRef = db.getReference("FakeMedicineReports")
 
-            // Attach the listeners. Firebase will now push updates automatically.
             ordersRef?.addValueEventListener(ordersListener)
-            reportsRef?.addValueEventListener(reportsListener)
             fakeRef?.addValueEventListener(fakeListener)
         } catch (e: Exception) {
-            // In a production app, log this error to a crash reporting service.
+            Log.e("AnalyticsViewModel", "Error starting listeners", e)
         }
     }
 
-    /**
-     * Detaches the listeners to prevent memory leaks and unnecessary background processing
-     * when the ViewModel is cleared.
-     */
     fun stopListening() {
         ordersRef?.removeEventListener(ordersListener)
-        reportsRef?.removeEventListener(reportsListener)
         fakeRef?.removeEventListener(fakeListener)
         ordersRef = null
-        reportsRef = null
         fakeRef = null
     }
 
@@ -161,10 +139,11 @@ fun SummaryStatCard(title: String, value: String, valueColor: Color = HealthShie
     }
 }
 
+
 @Composable
 fun ProgressBarStat(label: String, value: Int, maxValue: Int, color: Color) {
     val fraction = if (maxValue > 0) value.toFloat() / maxValue else 0f
-    val animatedFraction by animateFloatAsState(targetValue = fraction, label = "")
+    val animatedFraction by animateFloatAsState(targetValue = fraction, label = "progressAnimation")
 
     Column(Modifier.padding(vertical = 8.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -190,16 +169,10 @@ fun AnalyticsScreen(navController: NavController, viewModel: AnalyticsViewModel 
     val summary by viewModel.summary
     val isPreview = LocalInspectionMode.current
 
-    // This DisposableEffect correctly manages the ViewModel's listeners,
-    // starting them when the screen is displayed and stopping them when it's left.
     DisposableEffect(viewModel, isPreview) {
-        if (!isPreview) {
-            viewModel.startListening()
-        }
+        if (!isPreview) viewModel.startListening()
         onDispose {
-            if (!isPreview) {
-                viewModel.stopListening()
-            }
+            if (!isPreview) viewModel.stopListening()
         }
     }
 
@@ -211,7 +184,7 @@ fun AnalyticsScreen(navController: NavController, viewModel: AnalyticsViewModel 
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Info, contentDescription = "Analytics Icon", tint = Color.White)
+                        Icon(Icons.Default.BarChart, contentDescription = "Analytics Icon", tint = Color.White)
                         Spacer(Modifier.width(8.dp))
                         Text("Real-Time Analytics", color = Color.White)
                     }
@@ -226,10 +199,9 @@ fun AnalyticsScreen(navController: NavController, viewModel: AnalyticsViewModel 
         },
         bottomBar = {
             NavigationBar(containerColor = HealthShieldBlue) {
-                // In a real app, these would navigate. For now, they are visual placeholders.
                 NavigationBarItem(icon = { Icon(Icons.Default.Home, contentDescription = "Home", tint = Color.White.copy(alpha = 0.7f)) }, selected = false, onClick = { /* navigate to home */ })
                 NavigationBarItem(icon = { Icon(Icons.Default.List, contentDescription = "Reports", tint = Color.White.copy(alpha = 0.7f)) }, selected = false, onClick = { /* navigate to reports */ })
-                NavigationBarItem(icon = { Icon(Icons.Default.Info, contentDescription = "Analytics", tint = Color.White) }, selected = true, onClick = { })
+                NavigationBarItem(icon = { Icon(Icons.Default.BarChart, contentDescription = "Analytics", tint = Color.White) }, selected = true, onClick = { })
             }
         }
     ) { padding ->
@@ -238,6 +210,14 @@ fun AnalyticsScreen(navController: NavController, viewModel: AnalyticsViewModel 
             contentPadding = PaddingValues(vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            item {
+                val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.spreadpositivity))
+                LottieAnimation(
+                    composition = composition,
+                    iterations = Int.MAX_VALUE,
+                    modifier = Modifier.height(150.dp)
+                )
+            }
             item {
                 Column {
                     Text("📊 Summary Overview", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = HealthShieldTextDark)
@@ -250,8 +230,7 @@ fun AnalyticsScreen(navController: NavController, viewModel: AnalyticsViewModel 
                 }
                 Spacer(Modifier.height(4.dp))
                 SummaryStatCard("Total Orders", "${summary.totalOrders}")
-                SummaryStatCard("Avg. Order Price", "${summary.averagePrice.roundToInt()} KES") // Adjusted currency to KES
-                SummaryStatCard("Total Reports", "${summary.totalReports}")
+                SummaryStatCard("Avg. Order Price", "${summary.averagePrice.roundToInt()} KES")
                 SummaryStatCard("Fake Distributor Reports", "${summary.fakeDistributors}", valueColor = HealthShieldAccentTeal)
                 SummaryStatCard("Critical Severity Cases", "${summary.criticalCases}", valueColor = HealthShieldWarning)
             }
@@ -260,10 +239,10 @@ fun AnalyticsScreen(navController: NavController, viewModel: AnalyticsViewModel 
                 Column {
                     Text("📈 Data Distribution", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = HealthShieldTextDark)
                     Spacer(Modifier.height(12.dp))
-                    val maxVal = listOf(summary.totalOrders, summary.totalReports, summary.fakeDistributors, summary.criticalCases).maxOrNull()?.coerceAtLeast(1) ?: 1
+                    val maxVal = listOf(summary.totalOrders, summary.averagePrice.roundToInt(), summary.fakeDistributors, summary.criticalCases).maxOrNull()?.coerceAtLeast(1) ?: 1
                     ProgressBarStat("Orders", summary.totalOrders, maxVal, HealthShieldBlue)
-                    ProgressBarStat("Reports", summary.totalReports, maxVal, HealthShieldAccentTeal)
-                    ProgressBarStat("Fake Distributors", summary.fakeDistributors, maxVal, Color(0xFFFFA726)) // A friendly warning orange
+                    ProgressBarStat("Avg. Order Price (KES)", summary.averagePrice.roundToInt(), maxVal, HealthShieldAccentTeal)
+                    ProgressBarStat("Fake Distributors", summary.fakeDistributors, maxVal, HealthShieldOrange)
                     ProgressBarStat("Critical Cases", summary.criticalCases, maxVal, HealthShieldWarning)
                 }
             }
@@ -274,11 +253,10 @@ fun AnalyticsScreen(navController: NavController, viewModel: AnalyticsViewModel 
 /* --------------------------------------------------------------------------
    🧪 Preview
 -------------------------------------------------------------------------- */
-@Preview(showBackground = true, device = "id:pixel_4")
+@Preview(showBackground = true)
 @Composable
 fun AnalyticsScreenPreview() {
-    // We wrap the preview in a MaterialTheme to ensure components render correctly.
-    MaterialTheme {
+    HealthShield254Theme {
         AnalyticsScreen(navController = rememberNavController())
     }
 }

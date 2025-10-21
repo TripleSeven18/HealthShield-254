@@ -30,7 +30,6 @@ import com.google.firebase.database.*
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.rememberCameraPositionState
-import com.google.maps.android.compose.heatmap.Heatmap
 import com.google.maps.android.heatmaps.WeightedLatLng
 import com.triple7.healthshield254.R
 import com.triple7.healthshield254.ui.theme.HealthShield254Theme
@@ -147,6 +146,11 @@ fun HotspotMapScreen(navController: NavController) {
 }
 
 @Composable
+fun Heatmap(points: List<WeightedLatLng>, radius: Int) {
+    TODO("Not yet implemented")
+}
+
+@Composable
 fun LocationCard(location: HotspotLocation, onClick: () -> Unit) {
     Card(
         modifier = Modifier
@@ -194,7 +198,5 @@ private fun seedHotspotDataToFirebase() {
 @Preview(showBackground = true)
 @Composable
 fun PreviewHotspotMapScreen() {
-    HealthShield254Theme {
         HotspotMapScreen(rememberNavController())
-    }
 }
