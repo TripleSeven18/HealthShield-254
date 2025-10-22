@@ -102,4 +102,17 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+
+
+
+    // Cloudinary
+    implementation("io.coil-kt:coil-compose:2.0.0") // Load and display images in Jetpack Compose
+    implementation("com.squareup.retrofit2:retrofit:2.9.0") // Make API requests (network client)
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0") // Convert JSON to Kotlin objects and vice versa
+    implementation("com.squareup.okhttp3:logging-interceptor:4.9.3") // Log API request and response for debugging
+    implementation("com.cloudinary:cloudinary-android:2.3.1") // Cloudinary SDK for uploading and managing images
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3") // Coroutines support for background tasks (API calls, uploads)
+    // End
+
 }

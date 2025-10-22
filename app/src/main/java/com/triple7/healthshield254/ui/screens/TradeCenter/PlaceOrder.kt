@@ -27,18 +27,23 @@ import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.*
 
+/*
+  Changes made to avoid render/preview issues:
+  - Firebase references are initialized lazily (inside startListeningForProducts)
+    so preview/compose tooling won't try to initialize Firebase.
+  - PlaceOrderScreen only creates a real DB ref when not in preview.
+  - onPlaceOrder safely handles the "no DB" (preview) case by showing a Toast and returning.
+*/
 
 // --- DATA MODELS ---
-// This class represents a product that can be ordered.
 data class Product(
     val id: String = "",
     val name: String = "",
     val description: String = "",
-    val price: Double = 0.0, // Added a price field
+    val price: Double = 0.0,
     val uploadedBy: String = "HealthShield Pharmacy"
 )
 
-// This class is used to deserialize data from your 'medicines' node.
 data class MedicineFromDB(
     val name: String = "",
     val dosage: String = ""
@@ -55,7 +60,7 @@ data class Order(
 )
 
 // --- VIEWMODEL FOR DATA FETCHING ---
-class PlaceOrderViewModel : ViewModel() {
+open class PlaceOrderViewModel : ViewModel() {
     private val _products = mutableStateOf<List<Product>>(emptyList())
     val products: State<List<Product>> = _products
 
@@ -65,13 +70,24 @@ class PlaceOrderViewModel : ViewModel() {
     private val _error = mutableStateOf<String?>(null)
     val error: State<String?> = _error
 
-    // Corrected to point to 'medicines' node
-    private val database = FirebaseDatabase.getInstance().getReference("medicines")
+    // Make database reference nullable and initialize lazily inside startListeningForProducts
+    private var databaseRef: DatabaseReference? = null
     private var eventListener: ValueEventListener? = null
 
     fun startListeningForProducts() {
         viewModelScope.launch {
             _loading.value = true
+
+            // initialize DB reference here so the ViewModel does not trigger Firebase init during construction
+            if (databaseRef == null) {
+                databaseRef = FirebaseDatabase.getInstance().getReference("medicines")
+            }
+            val database = databaseRef ?: run {
+                _error.value = "Database not available"
+                _loading.value = false
+                return@launch
+            }
+
             eventListener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val productList = snapshot.children.mapNotNull { dataSnapshot ->
@@ -80,8 +96,8 @@ class PlaceOrderViewModel : ViewModel() {
                             Product(
                                 id = dataSnapshot.key ?: "",
                                 name = it.name,
-                                description = it.dosage, // Use dosage as description
-                                price = 150.00 // Placeholder price, since it's not in your DB
+                                description = it.dosage,
+                                price = 150.00 // placeholder - DB doesn't include price in this example
                             )
                         }
                     }
@@ -95,25 +111,35 @@ class PlaceOrderViewModel : ViewModel() {
                     _loading.value = false
                 }
             }
+
+            // attach listener
             database.addValueEventListener(eventListener!!)
         }
     }
 
+    /**
+     * Provide a DatabaseReference for other callers (if needed). Returns null if not initialized.
+     */
+    fun getDatabaseReference(): DatabaseReference? = databaseRef
+
     override fun onCleared() {
         super.onCleared()
-        eventListener?.let { database.removeEventListener(it) }
+        eventListener?.let { dbRef?.removeEventListener(it) }
     }
+
+    // small helper to avoid repeated safe-call noise
+    private val dbRef: DatabaseReference?
+        get() = databaseRef
 }
 
 // --- PLACE ORDER SCREEN ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaceOrderScreen(
-    currentUserType: String = "Distributor", // Default values for preview
+    currentUserType: String = "Distributor",
     currentUserId: String = "user123",
     viewModel: PlaceOrderViewModel = viewModel(),
 ) {
-    val database = FirebaseDatabase.getInstance().reference
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val isPreview = LocalInspectionMode.current
@@ -122,11 +148,23 @@ fun PlaceOrderScreen(
     val loading by viewModel.loading
     val error by viewModel.error
 
+    // Start listening only when not in preview to avoid Firebase initialization in tooling
     DisposableEffect(viewModel, isPreview) {
         if (!isPreview) {
+            // initialize DB inside viewmodel when starting to listen
             viewModel.startListeningForProducts()
+        } else {
+            // In preview, make sure loading is false so preview UI renders
+            // (we don't change the state in viewmodel directly here; preview will show fallback)
         }
-        onDispose { /* ViewModel now handles cleanup */ }
+        onDispose { /* ViewModel handles cleanup */ }
+    }
+
+    // Only create a real DB reference when not in preview
+    val firebaseRootRef: DatabaseReference? = remember {
+        if (!isPreview) {
+            FirebaseDatabase.getInstance().reference
+        } else null
     }
 
     Scaffold(
@@ -138,16 +176,28 @@ fun PlaceOrderScreen(
             )
         }
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
             when {
                 loading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
                 error != null -> {
-                    Text(text = "Error: $error", color = Color.Red, modifier = Modifier.align(Alignment.Center))
+                    Text(
+                        text = "Error: $error",
+                        color = Color.Red,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
                 }
                 products.isEmpty() -> {
-                    Text("No products available at the moment.", color = Color.Gray, modifier = Modifier.align(Alignment.Center))
+                    Text(
+                        "No products available at the moment.",
+                        color = Color.Gray,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
                 }
                 else -> {
                     LazyColumn(
@@ -159,8 +209,19 @@ fun PlaceOrderScreen(
                             ProductCard(
                                 product = product,
                                 onPlaceOrder = {
+                                    // If firebase isn't available (preview), show a toast and return
+                                    if (firebaseRootRef == null) {
+                                        Toast.makeText(
+                                            context,
+                                            "Preview mode: order simulated for ${product.name}",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        return@ProductCard
+                                    }
+
+                                    // Real ordering flow
                                     coroutineScope.launch {
-                                        val orderId = database.child("orders").push().key ?: return@launch
+                                        val orderId = firebaseRootRef.child("orders").push().key ?: return@launch
                                         val newOrder = Order(
                                             id = orderId,
                                             productId = product.id,
@@ -168,7 +229,7 @@ fun PlaceOrderScreen(
                                             buyerType = currentUserType,
                                             buyerId = currentUserId
                                         )
-                                        database.child("orders").child(orderId).setValue(newOrder)
+                                        firebaseRootRef.child("orders").child(orderId).setValue(newOrder)
                                             .addOnSuccessListener {
                                                 Toast.makeText(context, "Order for ${product.name} placed!", Toast.LENGTH_SHORT).show()
                                             }
@@ -223,10 +284,12 @@ fun ProductCard(product: Product, onPlaceOrder: () -> Unit) {
                 onClick = {
                     isPlacingOrder = true
                     onPlaceOrder()
-                    // A real app might reset isPlacingOrder in a callback from the ViewModel
+                    // isPlacingOrder would be reset by callback/side-effect in a full implementation
                 },
                 enabled = !isPlacingOrder,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = tripleSeven)
             ) {
@@ -246,7 +309,29 @@ fun ProductCard(product: Product, onPlaceOrder: () -> Unit) {
 @Preview(showBackground = true)
 @Composable
 fun PreviewPlaceOrderScreen() {
+    // Create a fake ViewModel for preview (so preview shows sample products)
+    val previewVM = object : PlaceOrderViewModel() {
+        init {
+            // populate sample products and set loading=false
+            // We can't call Firebase here in preview; just set the state directly via reflection of the backing fields
+            // But since the backing fields are private, simplest approach: use composition to show a UI sample instead.
+        }
+    }
+
+    // Instead of relying on the VM, use the composable with fake content by providing a small wrapper preview UI:
     MaterialTheme {
-        PlaceOrderScreen()
+        // Quick preview content — matches the real UI but doesn't depend on Firebase
+        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            ProductCard(
+                product = Product(
+                    id = "sample-1",
+                    name = "Paracetamol 500mg",
+                    description = "Pain & fever relief - 20 tablets",
+                    price = 120.0,
+                    uploadedBy = "HealthShield Pharmacy"
+                ),
+                onPlaceOrder = { /* no-op for preview */ }
+            )
+        }
     }
 }

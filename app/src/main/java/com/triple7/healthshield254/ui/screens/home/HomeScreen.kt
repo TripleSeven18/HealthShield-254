@@ -1,5 +1,4 @@
 package com.triple7.healthshield254.ui.screens.home
-
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -179,7 +178,6 @@ fun HomeScreen(navController: NavController) {
                 Triple("Analytics Screen", R.drawable.supplier, impressiveColors[7]),
                 Triple("ChatBoard Screen", R.drawable.supplier, impressiveColors[8]),
                 Triple("Admin Screen", R.drawable.supplier, impressiveColors[9]),
-                Triple("Upload-Medicine Screen", R.drawable.supplier, impressiveColors[10])
             )
 
             LazyRow(
@@ -203,13 +201,12 @@ fun HomeScreen(navController: NavController) {
                                         "Hotspot Map" -> navController.navigate(ROUT_HOTSPOTMAP)
                                         "ScanMedicine" -> navController.navigate(ROUT_SCANMEDICINE)
                                         "Report counterfeit" -> navController.navigate(ROUT_SENDREPORT)
-                                        "Medicine" -> navController.navigate(ROUT_MEDICINE)
+                                        "Medicine" -> navController.navigate(ROUT_VIEW_MEDICINES)
                                         "Place Order" -> navController.navigate(ROUT_PLACEORDER)
                                         "Supplier Manufacturer" -> navController.navigate(ROUT_SUPPLIERMANUFACTURER)
                                         "Analytics Screen" -> navController.navigate(ROUT_ANALYTICSSCREEN)
                                         "ChatBoard Screen" -> navController.navigate(ROUT_CHATBOARDSCREEN)
                                         "Admin Screen" -> navController.navigate(ROUT_ADMIN)
-                                        "Upload-Medicine Screen" -> navController.navigate(ROUT_UPLOADMEDICINE)
                                         "Profile & Settings" -> navController.navigate(ROUT_PROFILESETTINS)
                                     }
                                 }

@@ -1,6 +1,6 @@
 package com.triple7.healthshield254.ui.screens.reportmedicine
 
-import androidx.compose.foundation.Image
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -8,278 +8,229 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import coil.compose.rememberAsyncImagePainter
-import com.google.firebase.database.*
-import com.triple7.healthshield254.R
-import com.triple7.healthshield254.navigation.ROUT_CHATBOARDSCREEN
-import com.triple7.healthshield254.navigation.ROUT_HOME
-
-data class MedicineUpload(
-    val name: String = "",
-    val dosage: String = "",
-    val instructions: String = "",
-    val sideEffects: String = "",
-    val warnings: String = "",
-    val imageUrl: String = ""
-)
+import coil.compose.AsyncImage
+import com.triple7.healthshield254.data.MedicineViewModel
+import com.triple7.healthshield254.models.MedicineUpload
+import com.triple7.healthshield254.navigation.ROUT_ADD_MEDICINE
+import com.triple7.healthshield254.navigation.ROUT_UPDATE_MEDICINE
+import com.triple7.healthshield254.ui.screens.admin.AddMedicineScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MedicineScreen(navController: NavController) {
-    val inPreview = LocalInspectionMode.current
-    val databaseRef = if (!inPreview) FirebaseDatabase.getInstance().getReference("medicines") else null
+fun MedicinesScreen(navController: NavController) {
+    val medicineViewModel: MedicineViewModel = viewModel()
+    val medicines = medicineViewModel.medicines
+    val context = LocalContext.current
+    var searchQuery by remember { mutableStateOf("") }
 
-    var medicineList by remember { mutableStateOf<List<MedicineUpload>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-
-    // Fetch data from Firebase
+    // Fetch medicines from Firebase
     LaunchedEffect(Unit) {
-        if (!inPreview) {
-            databaseRef?.addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val medicines = snapshot.children.mapNotNull { it.getValue(MedicineUpload::class.java) }
-                    medicineList = medicines
-                    isLoading = false
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    isLoading = false
-                }
-            })
-        } else {
-            // Preview dummy data
-            medicineList = listOf(
-                MedicineUpload(
-                    name = "Paracetamol",
-                    dosage = "500mg",
-                    instructions = "Take after meals",
-                    sideEffects = "Drowsiness",
-                    warnings = "Avoid alcohol",
-                    imageUrl = ""
-                ),
-                MedicineUpload(
-                    name = "Amoxicillin",
-                    dosage = "250mg",
-                    instructions = "Take twice a day",
-                    sideEffects = "Nausea",
-                    warnings = "Consult doctor if allergic",
-                    imageUrl = ""
-                )
-            )
-            isLoading = false
-        }
+        medicineViewModel.fetchMedicines(context)
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Pharmaceutical Guide",
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
+            Column {
+                TopAppBar(
+                    title = { Text("Medicines") },
+                    actions = {
+                        IconButton(onClick = { /* TODO: Add menu options */ }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color(0xFFFFC107),
+                        titleContentColor = Color.White,
+                        actionIconContentColor = Color.White
                     )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF004D40)
-                ),
-                actions = {
-                    IconButton(onClick = { /* Placeholder for info or filter */ }) {
-                        Icon(Icons.Default.Info, contentDescription = "Info", tint = Color.White)
-                    }
-                }
-            )
+                )
+
+                // Search bar
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    placeholder = { Text("Search medicines...") },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFFFFC107),
+                        unfocusedBorderColor = Color.Gray
+                    )
+                )
+            }
         },
         bottomBar = {
-            NavigationBar(containerColor = Color(0xFF004D40)) {
-                NavigationBarItem(
-                    selected = true,
-                    onClick = { navController.navigate(ROUT_HOME) },
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Home", tint = Color.Black,
-                            modifier = Modifier.size(32.dp),
-
-                        )
-                           },
-                    label = { Text("Home", color = Color.White) }
-                )
+            NavigationBar(containerColor = Color(0xFFFFC107)) {
                 NavigationBarItem(
                     selected = false,
-                    onClick = { navController.navigate(ROUT_CHATBOARDSCREEN) },
-                    icon = { Icon(painter = painterResource(id = R.drawable.consultation),
-                        contentDescription = "Consultation", tint = Color.Black,
-                        modifier = Modifier.size(32.dp),
-                        )
-                           },
-                    label = { Text("Consultation", color = Color.White) }
+                    onClick = { navController.navigate(ROUT_ADD_MEDICINE) }, // Navigate to Add Medicine
+                    icon = { Icon(Icons.Default.Add, contentDescription = "Add Medicine") },
+                    label = { Text("Add") }
                 )
             }
         }
     ) { paddingValues ->
 
-        val backgroundBrush = Brush.verticalGradient(
-            listOf(Color(0xFF0D1B1E), Color(0xFF004D40))
-        )
+        // Filtered list
+        val filteredMedicines = medicines.filter { med ->
+            med.name?.contains(searchQuery, ignoreCase = true) == true
+        }
 
-        Box(
+        // Grid layout
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
             modifier = Modifier
-                .fillMaxSize()
-                .background(brush = backgroundBrush)
                 .padding(paddingValues)
-                .padding(12.dp)
+                .fillMaxSize()
+                .background(Color(0xFFF5F5F5)),
+            contentPadding = PaddingValues(8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            when {
-                isLoading -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        CircularProgressIndicator(color = Color(0xFF26A69A))
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text("Loading medicines...", color = Color.White)
-                    }
-                }
-
-                medicineList.isEmpty() -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = "No Data",
-                            tint = Color(0xFF26A69A),
-                            modifier = Modifier.size(60.dp)
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text("No medicines uploaded yet.", color = Color.White)
-                    }
-                }
-
-                else -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        items(medicineList) { medicine ->
-                            MedicineCard(medicine = medicine)
-                        }
-                    }
-                }
+            items(filteredMedicines) { medicine ->
+                MedicineCard(
+                    medicine = medicine,
+                    onDelete = {  },
+                    navController = navController
+                )
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MedicineCard(medicine: MedicineUpload) {
+fun MedicineCard(
+    medicine: MedicineUpload,
+    onDelete: (String) -> Unit,
+    navController: NavController
+) {
+    var showBottomSheet by remember { mutableStateOf(false) }
+
+    // Delete confirmation sheet
+    if (showBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBottomSheet = false },
+            containerColor = Color.White,
+            tonalElevation = 4.dp,
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Delete Medicine?", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Are you sure you want to delete ${medicine.name}?")
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    OutlinedButton(onClick = { showBottomSheet = false }) {
+                        Text("Cancel")
+                    }
+                    Button(
+                        onClick = {
+                            showBottomSheet = false
+                            medicine.id?.let { onDelete(it) }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                    ) {
+                        Text("Delete")
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
+
+    // Card showing medicine info
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(260.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1C2F2B)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+            .wrapContentHeight()
+            .shadow(4.dp, RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(12.dp)),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(10.dp),
+            modifier = Modifier.padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (medicine.imageUrl.isNotEmpty()) {
-                Image(
-                    painter = rememberAsyncImagePainter(medicine.imageUrl),
+            // Medicine Image
+            medicine.imageUrl?.let { imageUrl ->
+                AsyncImage(
+                    model = imageUrl,
                     contentDescription = "Medicine Image",
-                    contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .height(100.dp)
+                        .height(120.dp)
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop
                 )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .height(100.dp)
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFF263A34)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.Info,
-                        contentDescription = "Placeholder",
-                        tint = Color(0xFF26A69A),
-                        modifier = Modifier.size(50.dp)
-                    )
-                }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                medicine.name,
-                color = Color(0xFFB2FFCB),
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                textAlign = TextAlign.Center
-            )
+            // Medicine name & price
+            Text(medicine.name ?: "Unnamed", style = MaterialTheme.typography.titleMedium)
+            Text("Price: Ksh${medicine.price ?: "N/A"}", style = MaterialTheme.typography.bodyMedium)
 
-            Text(
-                "Dosage: ${medicine.dosage}",
-                color = Color.White,
-                fontSize = 13.sp,
-                textAlign = TextAlign.Center
-            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("Dosage: ${medicine.dosage ?: "N/A"}", style = MaterialTheme.typography.bodySmall)
+            Text("Stock: ${medicine.stock ?: "N/A"}", style = MaterialTheme.typography.bodySmall)
 
-            Text(
-                "Instructions: ${medicine.instructions}",
-                color = Color(0xFFD1EED6),
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                "Side Effects: ${medicine.sideEffects}",
-                color = Color(0xFFE0B2B2),
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center
-            )
 
-            Text(
-                "Warnings: ${medicine.warnings}",
-                color = Color(0xFFFFCC80),
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center
-            )
+            // Contact Pharmacist via SMS
+            val context = LocalContext.current
+            Button(
+                onClick = {
+                    val smsIntent = Intent(Intent.ACTION_SENDTO)
+                    smsIntent.data = "smsto:${medicine.phoneNumber}".toUri()
+                    smsIntent.putExtra("sms_body", "Hello, I’d like to inquire about ${medicine.name}.")
+                    context.startActivity(smsIntent)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFC107))
+            ) {
+                Text("Message Pharmacist")
+            }
         }
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun MedicineScreenPreview() {
-    MedicineScreen(navController = rememberNavController())
+fun MedicinesScreenPreview() {
+    MedicinesScreen(rememberNavController())
 }

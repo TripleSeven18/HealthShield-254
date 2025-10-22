@@ -9,8 +9,8 @@ import androidx.navigation.compose.rememberNavController
 import com.triple7.healthshield254.ui.screens.TradeCenter.AnalyticsScreen
 import com.triple7.healthshield254.ui.screens.TradeCenter.PlaceOrderScreen
 import com.triple7.healthshield254.ui.screens.TradeCenter.SupplierManufacturerDashboard
+import com.triple7.healthshield254.ui.screens.admin.AddMedicineScreen
 import com.triple7.healthshield254.ui.screens.admin.AdminScreen
-import com.triple7.healthshield254.ui.screens.admin.UploadMedicineScreen
 import com.triple7.healthshield254.ui.screens.auth.LaunchScreen
 import com.triple7.healthshield254.ui.screens.auth.LoginScreen
 import com.triple7.healthshield254.ui.screens.auth.RegistrationScreen
@@ -21,7 +21,7 @@ import com.triple7.healthshield254.ui.screens.onboarding.Onboarding1
 import com.triple7.healthshield254.ui.screens.onboarding.Onboarding2
 import com.triple7.healthshield254.ui.screens.profilesettings.EditProfile
 import com.triple7.healthshield254.ui.screens.profilesettings.ProfileSettingsScreen
-import com.triple7.healthshield254.ui.screens.reportmedicine.MedicineScreen
+import com.triple7.healthshield254.ui.screens.reportmedicine.MedicinesScreen
 import com.triple7.healthshield254.ui.screens.reportmedicine.ReportScreen
 import com.triple7.healthshield254.ui.screens.reportmedicine.ScanMedicine
 import com.triple7.healthshield254.ui.screens.reportmedicine.ViewReport
@@ -68,9 +68,6 @@ fun AppNavHost(
         composable(ROUT_REPORTMEDICINE) {
             ScanVerifyScreen(navController)
         }
-        composable(ROUT_UPLOADMEDICINE) {
-            UploadMedicineScreen(navController)
-        }
 
         composable(ROUT_ADMIN) {
             AdminScreen(navController)
@@ -101,10 +98,6 @@ fun AppNavHost(
             LoginScreen(navController)
         }
 
-        composable(ROUT_MEDICINE) {
-            MedicineScreen(navController)
-        }
-
         composable(ROUT_SENDREPORT) {
             ReportScreen(navController)
         }
@@ -123,9 +116,7 @@ fun AppNavHost(
         composable(ROUT_SUPPLIERMANUFACTURER) {
             SupplierManufacturerDashboard(navController)
         }
-        composable(ROUT_UPLOADMEDICINE) {
-            UploadMedicineScreen(navController)
-        }
+
         composable(ROUT_LAUNCHSCREEN) {
             LaunchScreen(navController)
         }
@@ -141,5 +132,21 @@ fun AppNavHost(
                 currentUserId = currentUserId
             )
         }
+
+
+        // Medicines
+        composable(ROUT_ADD_MEDICINE) {
+            AddMedicineScreen(navController)
+        }
+        composable(ROUT_VIEW_MEDICINES) {
+            MedicinesScreen(navController)
+        }
+
+
+
+
+
+
+
     }
 }

@@ -13,13 +13,23 @@ const val ROUT_SENDREPORT= "ReportScreen"
 const val ROUT_VIEWREPORT= "viewreport"
 const val ROUT_ONBOARDING1= "Onboarding1"
 const val ROUT_ONBOARDING2= "Onboarding2"
-const val ROUT_MEDICINE= "medicine"
 const val ROUT_PLACEORDER= "PlaceOrderScreen"
 const val ROUT_SUPPLIERMANUFACTURER= "SupplierManufacturerDashboard"
 const val ROUT_ADMIN= "admin"
-const val ROUT_UPLOADMEDICINE= "UploadMedicineScreen"
 const val ROUT_LAUNCHSCREEN= "LaunchScreen"
 const val ROUT_CHATBOARDSCREEN= "ChatBoardScreen"
 const val ROUT_ANALYTICSSCREEN= "AnalyticsScreen"
 const val ROUT_SCANMEDICINE= "ScanMedicine"
 const val ROUT_EDITPROFILE= "EditProfile"
+
+
+//Medicine
+// Medicines
+const val ROUT_ADD_MEDICINE = "addMedicine"
+const val ROUT_VIEW_MEDICINES = "viewMedicines"
+const val ROUT_UPDATE_MEDICINE = "update_medicine/{medicineId}"
+
+// End
+
+
+//E nd

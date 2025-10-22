@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.triple7.healthshield254.navigation.ROUT_UPLOADMEDICINE
+import com.triple7.healthshield254.navigation.ROUT_ADD_MEDICINE
 import com.triple7.healthshield254.navigation.ROUT_VIEWREPORT
 import com.triple7.healthshield254.ui.theme.tripleSeven
 
@@ -100,7 +100,7 @@ val dashboardItems = listOf(
         "Medicine Information",
         "Upload, edit, and manage details about medicines, dosages, and inventory.",
         Color(0xFF03A9F4),
-        ROUT_UPLOADMEDICINE
+        ROUT_ADD_MEDICINE
     ),
     DashboardItem(
         "Consultations",
