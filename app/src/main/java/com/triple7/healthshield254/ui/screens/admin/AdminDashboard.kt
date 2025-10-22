@@ -1,6 +1,5 @@
 package com.triple7.healthshield254.ui.screens.admin
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,37 +15,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.triple7.healthshield254.navigation.ROUT_ADD_MEDICINE
 import com.triple7.healthshield254.navigation.ROUT_VIEWREPORT
 import com.triple7.healthshield254.ui.theme.tripleSeven
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminScreen(navController: NavController) {
-
-    val backgroundGradient = Brush.verticalGradient(
-        colors = listOf(Color(0xFF0D1B1E), Color(0xFF102C2E))
-    )
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(brush = backgroundGradient)
-            .padding(16.dp)
-    ) {
+    Scaffold(
+        containerColor = Color.White // Set a solid background color
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 24.dp),
+                .padding(paddingValues)
+                .background(Brush.verticalGradient(listOf(tripleSeven.copy(alpha = 0.9f), Color.White)))
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             // Header
             Text(
                 text = "HealthShield Admin Dashboard",
-                fontSize = 22.sp,
+                style = MaterialTheme.typography.headlineSmall,
                 color = tripleSeven,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
@@ -56,8 +48,8 @@ fun AdminScreen(navController: NavController) {
 
             Text(
                 text = "Manage and monitor the HealthShield system efficiently.",
-                color = Color(0xFF00BCD4),
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyLarge,
+                color = Color.Gray,
                 textAlign = TextAlign.Center
             )
 
@@ -71,7 +63,6 @@ fun AdminScreen(navController: NavController) {
                 items(dashboardItems.size) { index ->
                     val item = dashboardItems[index]
                     DashboardCard(item = item) {
-                        // ✅ Navigate to appropriate destination
                         navController.navigate(item.route)
                     }
                 }
@@ -88,7 +79,6 @@ data class DashboardItem(
     val route: String
 )
 
-// ✅ Add your actual navigation routes
 val dashboardItems = listOf(
     DashboardItem(
         "View Report",
@@ -124,55 +114,39 @@ val dashboardItems = listOf(
 
 @Composable
 fun DashboardCard(item: DashboardItem, onClick: () -> Unit) {
-    var isPressed by remember { mutableStateOf(false) }
-    val animatedColor by animateColorAsState(
-        targetValue = if (isPressed) item.color.copy(alpha = 0.7f) else item.color
-    )
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable {
-                isPressed = !isPressed
-                onClick()
-            },
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1C2F2B)),
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .background(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(animatedColor, Color(0xFF1C2F2B))
-                    )
-                )
-                .padding(20.dp)
+        Column(
+            modifier = Modifier.padding(20.dp)
         ) {
-            Column {
-                Text(
-                    text = item.title,
-                    fontSize = 18.sp,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = item.description,
-                    fontSize = 14.sp,
-                    color = Color(0xFF90DAE5)
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Button(
-                    onClick = onClick, // ✅ Navigates to item.route
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = item.color
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Text("Open", color = Color.Black)
-                }
+            Text(
+                text = item.title,
+                style = MaterialTheme.typography.titleLarge,
+                color = Color.Black,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = item.description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = onClick,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = item.color
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Text("Open", color = Color.White)
             }
         }
     }

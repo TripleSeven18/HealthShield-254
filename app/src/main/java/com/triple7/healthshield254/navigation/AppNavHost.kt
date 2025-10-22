@@ -14,7 +14,6 @@ import com.triple7.healthshield254.ui.screens.admin.AdminScreen
 import com.triple7.healthshield254.ui.screens.auth.LaunchScreen
 import com.triple7.healthshield254.ui.screens.auth.LoginScreen
 import com.triple7.healthshield254.ui.screens.auth.RegistrationScreen
-import com.triple7.healthshield254.ui.screens.chat.ChatBoardScreen
 import com.triple7.healthshield254.ui.screens.home.HomeScreen
 import com.triple7.healthshield254.ui.screens.hotspotmap.HotspotMapScreen
 import com.triple7.healthshield254.ui.screens.onboarding.Onboarding1
@@ -53,7 +52,7 @@ fun AppNavHost(
         }
 
         composable(ROUT_CHATBOARDSCREEN) {
-            ChatBoardScreen(navController, currentUserId = "user1")
+            ChatScreen(navController, currentUserId = "user1")
         }
 
         composable(ROUT_ANALYTICSSCREEN) {
@@ -149,4 +148,9 @@ fun AppNavHost(
 
 
     }
+}
+
+@Composable
+fun ChatScreen(x0: NavHostController, currentUserId: String) {
+    TODO("Not yet implemented")
 }

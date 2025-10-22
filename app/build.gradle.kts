@@ -75,7 +75,6 @@ dependencies {
     implementation("com.google.guava:guava:31.1-android")
 
     // ML Kit
-    implementation("com.google.mlkit:barcode-scanning:17.2.0")
     implementation(libs.vision.common)
     implementation(libs.play.services.mlkit.text.recognition.common)
     implementation(libs.play.services.mlkit.text.recognition)
@@ -88,11 +87,6 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-storage-ktx")
 
-    // Google Maps for Compose
-    implementation("com.google.android.gms:play-services-maps:18.2.0")
-    implementation("com.google.maps.android:maps-compose:4.3.3")
-    implementation("com.google.maps.android:maps-compose-utils:4.3.3")
-    implementation("com.google.maps.android:maps-compose-widgets:4.3.3")
 
     // Testing
     testImplementation(libs.junit)
@@ -107,12 +101,19 @@ dependencies {
 
 
     // Cloudinary
-    implementation("io.coil-kt:coil-compose:2.0.0") // Load and display images in Jetpack Compose
     implementation("com.squareup.retrofit2:retrofit:2.9.0") // Make API requests (network client)
     implementation("com.squareup.retrofit2:converter-gson:2.9.0") // Convert JSON to Kotlin objects and vice versa
     implementation("com.squareup.okhttp3:logging-interceptor:4.9.3") // Log API request and response for debugging
     implementation("com.cloudinary:cloudinary-android:2.3.1") // Cloudinary SDK for uploading and managing images
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3") // Coroutines support for background tasks (API calls, uploads)
     // End
+
+    //Google Maps
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.maps.android:maps-compose:2.11.4")
+    implementation("com.google.maps.android:android-maps-utils:2.3.0")
+    //End
+
+
 
 }

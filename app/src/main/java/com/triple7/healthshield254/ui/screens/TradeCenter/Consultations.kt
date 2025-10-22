@@ -1,13 +1,11 @@
 package com.triple7.healthshield254.ui.screens.chat
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Send
@@ -15,9 +13,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,20 +23,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.database.*
+import com.triple7.healthshield254.navigation.ChatScreen
 import com.triple7.healthshield254.ui.theme.tripleSeven
 import java.text.SimpleDateFormat
 import java.util.*
 
 /* --------------------------------------------------------------------------
-   📝 Data Models
+   🧠 Data Models
 -------------------------------------------------------------------------- */
-data class ChatRoom(
-    val chatId: String = "",
-    val lastMessage: String = "",
-    val lastTimestamp: Long = 0,
-    val participantName: String = ""
-)
-
 data class Message(
     val senderId: String = "",
     val text: String = "",
@@ -47,52 +38,7 @@ data class Message(
 )
 
 /* --------------------------------------------------------------------------
-   🧠 ChatBoard ViewModel
--------------------------------------------------------------------------- */
-class ChatBoardViewModel(private val currentUserId: String) : ViewModel() {
-    private val db = FirebaseDatabase.getInstance().getReference("chats")
-    private val _chatRooms = mutableStateListOf<ChatRoom>()
-    val chatRooms: List<ChatRoom> get() = _chatRooms
-
-    private val listener = object : ValueEventListener {
-        override fun onDataChange(snapshot: DataSnapshot) {
-            _chatRooms.clear()
-            snapshot.children.forEach { chatSnapshot ->
-                val participants = chatSnapshot.child("participants").value as? Map<*, *> ?: return@forEach
-                if (!participants.containsKey(currentUserId)) return@forEach
-
-                val lastMessage = chatSnapshot.child("lastMessage").getValue(String::class.java) ?: ""
-                val lastTimestamp = chatSnapshot.child("lastTimestamp").getValue(Long::class.java) ?: 0L
-                val otherId = participants.keys.firstOrNull { it != currentUserId } as? String ?: ""
-                var otherName = "Unknown"
-
-                FirebaseDatabase.getInstance().getReference("users/$otherId/name")
-                    .get().addOnSuccessListener { snapshotName ->
-                        otherName = snapshotName.getValue(String::class.java) ?: "Unknown"
-                        val existingIndex = _chatRooms.indexOfFirst { it.chatId == chatSnapshot.key }
-                        val room = ChatRoom(
-                            chatId = chatSnapshot.key ?: "",
-                            lastMessage = lastMessage,
-                            lastTimestamp = lastTimestamp,
-                            participantName = otherName
-                        )
-                        if (existingIndex >= 0) _chatRooms[existingIndex] = room else _chatRooms.add(room)
-                        _chatRooms.sortByDescending { it.lastTimestamp }
-                    }
-            }
-        }
-
-        override fun onCancelled(error: DatabaseError) {}
-    }
-
-    init { startListening() }
-    fun startListening() = db.addValueEventListener(listener)
-    fun stopListening() = db.removeEventListener(listener)
-    override fun onCleared() { super.onCleared(); stopListening() }
-}
-
-/* --------------------------------------------------------------------------
-   🧠 ChatScreen ViewModel
+   🧠 Chat ViewModel
 -------------------------------------------------------------------------- */
 class ChatScreenViewModel(
     private val chatId: String,
@@ -119,9 +65,14 @@ class ChatScreenViewModel(
     }
 
     init { startListening() }
+
     fun startListening() = messagesRef.addValueEventListener(listener)
     fun stopListening() = messagesRef.removeEventListener(listener)
-    override fun onCleared() { super.onCleared(); stopListening() }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopListening()
+    }
 
     fun sendMessage(text: String) {
         if (text.isBlank()) return
@@ -129,88 +80,19 @@ class ChatScreenViewModel(
         val msg = Message(senderId = currentUserId, text = text, timestamp = timestamp)
         val newKey = messagesRef.push().key ?: return
         messagesRef.child(newKey).setValue(msg)
-        chatRef.updateChildren(mapOf(
-            "lastMessage" to text,
-            "lastTimestamp" to timestamp,
-            "participants/$currentUserId" to true,
-            "participants/$participantId" to true
-        ))
-    }
-}
-
-/* --------------------------------------------------------------------------
-   🧩 ChatBoard Screen
--------------------------------------------------------------------------- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ChatBoardScreen(
-    navController: NavController,
-    currentUserId: String,
-    viewModel: ChatBoardViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            @Suppress("UNCHECKED_CAST")
-            return ChatBoardViewModel(currentUserId) as T
-        }
-    })
-) {
-    val chatRooms by remember { mutableStateOf(viewModel.chatRooms) }
-    val isPreview = LocalInspectionMode.current
-
-    DisposableEffect(key1 = isPreview, key2 = viewModel) {
-        if (!isPreview) viewModel.startListening()
-        onDispose { if (!isPreview) viewModel.stopListening() }
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Chats") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = tripleSeven)
+        chatRef.updateChildren(
+            mapOf(
+                "lastMessage" to text,
+                "lastTimestamp" to timestamp,
+                "participants/$currentUserId" to true,
+                "participants/$participantId" to true
             )
-        }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(chatRooms) { room ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            navController.navigate("chat/${room.chatId}/${currentUserId}/${room.participantName}")
-                        },
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F8E9)),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(room.participantName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text(room.lastMessage, fontSize = 14.sp, color = Color.Gray)
-                        }
-                        Text(
-                            if (room.lastTimestamp > 0) SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(room.lastTimestamp)) else "",
-                            fontSize = 12.sp,
-                            color = Color.DarkGray
-                        )
-                    }
-                }
-            }
-        }
+        )
     }
 }
 
 /* --------------------------------------------------------------------------
-   🧩 Chat Screen with Auto-Scroll
+   🧩 ChatScreen (Updated UI Styled Like Login)
 -------------------------------------------------------------------------- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -220,92 +102,121 @@ fun ChatScreen(
     currentUserId: String,
     participantId: String,
     participantName: String,
-    viewModel: ChatScreenViewModel = viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            @Suppress("UNCHECKED_CAST")
-            return ChatScreenViewModel(chatId, currentUserId, participantId) as T
+    viewModel: ChatScreenViewModel = viewModel(
+        factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return ChatScreenViewModel(chatId, currentUserId, participantId) as T
+            }
         }
-    })
+    )
 ) {
     var messageText by remember { mutableStateOf("") }
     val messages by remember { derivedStateOf { viewModel.messages } }
-    val isPreview = LocalInspectionMode.current
     val listState = rememberLazyListState()
 
-    // Auto-scroll to bottom when messages change
+    val gradientBrush = Brush.verticalGradient(
+        listOf(tripleSeven.copy(alpha = 0.9f), Color.White)
+    )
+
+    // 🔹 Auto-scroll when messages update
     LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.size - 1)
-        }
+        if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1)
     }
 
-    DisposableEffect(key1 = isPreview, key2 = viewModel) {
-        if (!isPreview) viewModel.startListening()
-        onDispose { if (!isPreview) viewModel.stopListening() }
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(participantName) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = tripleSeven)
-            )
-        },
-        bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                BasicTextField(
-                    value = messageText,
-                    onValueChange = { messageText = it },
-                    modifier = Modifier
-                        .weight(1f)
-                        .background(Color(0xFFF1F8E9), RoundedCornerShape(16.dp))
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                )
-                IconButton(onClick = {
-                    viewModel.sendMessage(messageText)
-                    messageText = ""
-                }) {
-                    Icon(Icons.Default.Send, contentDescription = "Send", tint = tripleSeven)
-                }
-            }
-        }
-    ) { padding ->
-        LazyColumn(
-            state = listState,
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(gradientBrush)
+    ) {
+        Card(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+                .padding(12.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
-            items(messages) { msg ->
-                val isCurrentUser = msg.senderId == currentUserId
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = if (isCurrentUser) Arrangement.End else Arrangement.Start
-                ) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isCurrentUser) tripleSeven else Color(0xFFF1F8E9)
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.padding(4.dp)
-                    ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                TopAppBar(
+                    title = {
                         Text(
-                            msg.text,
-                            modifier = Modifier.padding(8.dp),
-                            color = if (isCurrentUser) Color.White else Color.Black
+                            text = participantName,
+                            color = Color.White,
+                            fontSize = 20.sp
                         )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = tripleSeven)
+                )
+
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    items(messages) { msg ->
+                        val isMe = msg.senderId == currentUserId
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start
+                        ) {
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isMe) tripleSeven else Color(0xFFF1F8E9)
+                                ),
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.padding(4.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(10.dp)) {
+                                    Text(
+                                        text = msg.text,
+                                        color = if (isMe) Color.White else Color.Black
+                                    )
+                                    Text(
+                                        text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(msg.timestamp)),
+                                        color = if (isMe) Color.White.copy(0.8f) else Color.Gray,
+                                        fontSize = 10.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = messageText,
+                        onValueChange = { messageText = it },
+                        label = { Text("Type a message") },
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = tripleSeven,
+                            unfocusedBorderColor = Color.Gray,
+                            focusedLabelColor = tripleSeven
+                        )
+                    )
+                    IconButton(onClick = {
+                        viewModel.sendMessage(messageText)
+                        messageText = ""
+                    }) {
+                        Icon(Icons.Default.Send, contentDescription = "Send", tint = tripleSeven)
                     }
                 }
             }
@@ -314,14 +225,8 @@ fun ChatScreen(
 }
 
 /* --------------------------------------------------------------------------
-   🧪 Previews
+   🧪 Preview
 -------------------------------------------------------------------------- */
-@Preview(showBackground = true)
-@Composable
-fun ChatBoardPreview() {
-    ChatBoardScreen(navController = rememberNavController(), currentUserId = "user1")
-}
-
 @Preview(showBackground = true)
 @Composable
 fun ChatScreenPreview() {
