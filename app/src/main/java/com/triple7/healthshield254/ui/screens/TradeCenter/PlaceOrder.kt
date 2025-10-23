@@ -1,39 +1,43 @@
 package com.triple7.healthshield254.ui.screens.TradeCenter
 
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddShoppingCart
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.database.*
+import com.triple7.healthshield254.R
 import com.triple7.healthshield254.ui.theme.tripleSeven
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.*
-
-/*
-  Changes made to avoid render/preview issues:
-  - Firebase references are initialized lazily (inside startListeningForProducts)
-    so preview/compose tooling won't try to initialize Firebase.
-  - PlaceOrderScreen only creates a real DB ref when not in preview.
-  - onPlaceOrder safely handles the "no DB" (preview) case by showing a Toast and returning.
-*/
 
 // --- DATA MODELS ---
 data class Product(
@@ -56,7 +60,10 @@ data class Order(
     val buyerType: String = "",
     val buyerId: String = "",
     val quantity: Int = 1,
-    val timestamp: Long = System.currentTimeMillis()
+    val paymentMethod: String = "", // Added payment method
+    val timestamp: Long = System.currentTimeMillis(),
+    val isApproved: Boolean = false, // Will be set to true
+    val receipt: String = "" // Will be populated
 )
 
 // --- VIEWMODEL FOR DATA FETCHING ---
@@ -70,7 +77,6 @@ open class PlaceOrderViewModel : ViewModel() {
     private val _error = mutableStateOf<String?>(null)
     val error: State<String?> = _error
 
-    // Make database reference nullable and initialize lazily inside startListeningForProducts
     private var databaseRef: DatabaseReference? = null
     private var eventListener: ValueEventListener? = null
 
@@ -78,7 +84,6 @@ open class PlaceOrderViewModel : ViewModel() {
         viewModelScope.launch {
             _loading.value = true
 
-            // initialize DB reference here so the ViewModel does not trigger Firebase init during construction
             if (databaseRef == null) {
                 databaseRef = FirebaseDatabase.getInstance().getReference("medicines")
             }
@@ -97,7 +102,7 @@ open class PlaceOrderViewModel : ViewModel() {
                                 id = dataSnapshot.key ?: "",
                                 name = it.name,
                                 description = it.dosage,
-                                price = 150.00 // placeholder - DB doesn't include price in this example
+                                price = 150.00 // placeholder
                             )
                         }
                     }
@@ -112,14 +117,10 @@ open class PlaceOrderViewModel : ViewModel() {
                 }
             }
 
-            // attach listener
             database.addValueEventListener(eventListener!!)
         }
     }
 
-    /**
-     * Provide a DatabaseReference for other callers (if needed). Returns null if not initialized.
-     */
     fun getDatabaseReference(): DatabaseReference? = databaseRef
 
     override fun onCleared() {
@@ -127,7 +128,6 @@ open class PlaceOrderViewModel : ViewModel() {
         eventListener?.let { dbRef?.removeEventListener(it) }
     }
 
-    // small helper to avoid repeated safe-call noise
     private val dbRef: DatabaseReference?
         get() = databaseRef
 }
@@ -148,23 +148,24 @@ fun PlaceOrderScreen(
     val loading by viewModel.loading
     val error by viewModel.error
 
-    // Start listening only when not in preview to avoid Firebase initialization in tooling
+    var showReceiptDialog by remember { mutableStateOf(false) }
+    var generatedReceipt by remember { mutableStateOf("") }
+
+    if (showReceiptDialog) {
+        OrderConfirmationDialog(receipt = generatedReceipt) {
+            showReceiptDialog = false
+        }
+    }
+
     DisposableEffect(viewModel, isPreview) {
         if (!isPreview) {
-            // initialize DB inside viewmodel when starting to listen
             viewModel.startListeningForProducts()
-        } else {
-            // In preview, make sure loading is false so preview UI renders
-            // (we don't change the state in viewmodel directly here; preview will show fallback)
         }
         onDispose { /* ViewModel handles cleanup */ }
     }
 
-    // Only create a real DB reference when not in preview
     val firebaseRootRef: DatabaseReference? = remember {
-        if (!isPreview) {
-            FirebaseDatabase.getInstance().reference
-        } else null
+        if (!isPreview) FirebaseDatabase.getInstance().reference else null
     }
 
     Scaffold(
@@ -182,23 +183,9 @@ fun PlaceOrderScreen(
                 .padding(paddingValues)
         ) {
             when {
-                loading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
-                error != null -> {
-                    Text(
-                        text = "Error: $error",
-                        color = Color.Red,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-                products.isEmpty() -> {
-                    Text(
-                        "No products available at the moment.",
-                        color = Color.Gray,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
+                loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                error != null -> Text("Error: $error", color = Color.Red, modifier = Modifier.align(Alignment.Center))
+                products.isEmpty() -> Text("No products available.", color = Color.Gray, modifier = Modifier.align(Alignment.Center))
                 else -> {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -208,30 +195,49 @@ fun PlaceOrderScreen(
                         items(products, key = { it.id }) { product ->
                             ProductCard(
                                 product = product,
-                                onPlaceOrder = {
-                                    // If firebase isn't available (preview), show a toast and return
+                                onPlaceOrder = { quantity, paymentMethod, paymentDetail ->
                                     if (firebaseRootRef == null) {
-                                        Toast.makeText(
-                                            context,
-                                            "Preview mode: order simulated for ${product.name}",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                                        Toast.makeText(context, "Preview: Order for ${product.name} simulated", Toast.LENGTH_SHORT).show()
                                         return@ProductCard
                                     }
 
-                                    // Real ordering flow
                                     coroutineScope.launch {
                                         val orderId = firebaseRootRef.child("orders").push().key ?: return@launch
+
+                                        val currencyFormat = NumberFormat.getCurrencyInstance(Locale("en", "KE"))
+                                        val paymentInfo = if (paymentDetail.isNotBlank()) " from $paymentDetail" else ""
+                                        val receiptContent = """
+                                            HealthShield254
+                                            ================================
+                                            RECEIPT
+                                            --------------------------------
+                                            Order ID: $orderId
+                                            Product: ${product.name}
+                                            Quantity: $quantity
+                                            Price: ${currencyFormat.format(product.price * quantity)}
+                                            Payment Method: $paymentMethod$paymentInfo
+                                            Buyer ID: $currentUserId
+                                            Status: PAID & APPROVED
+                                            --------------------------------
+                                            Thank you for your purchase!
+                                        """.trimIndent()
+
                                         val newOrder = Order(
                                             id = orderId,
                                             productId = product.id,
                                             productName = product.name,
                                             buyerType = currentUserType,
-                                            buyerId = currentUserId
+                                            buyerId = currentUserId,
+                                            quantity = quantity,
+                                            paymentMethod = "$paymentMethod$paymentInfo",
+                                            isApproved = true,
+                                            receipt = receiptContent
                                         )
+
                                         firebaseRootRef.child("orders").child(orderId).setValue(newOrder)
                                             .addOnSuccessListener {
-                                                Toast.makeText(context, "Order for ${product.name} placed!", Toast.LENGTH_SHORT).show()
+                                                generatedReceipt = receiptContent
+                                                showReceiptDialog = true
                                             }
                                             .addOnFailureListener {
                                                 Toast.makeText(context, "Order failed: ${it.message}", Toast.LENGTH_LONG).show()
@@ -248,48 +254,116 @@ fun PlaceOrderScreen(
 }
 
 // --- PRODUCT CARD ---
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProductCard(product: Product, onPlaceOrder: () -> Unit) {
+fun ProductCard(product: Product, onPlaceOrder: (Int, String, String) -> Unit) {
     val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale("en", "KE")) }
     var isPlacingOrder by remember { mutableStateOf(false) }
+    var quantity by remember { mutableStateOf(1) }
+    var expanded by remember { mutableStateOf(false) }
+    val paymentMethods = listOf(
+        // Mobile Money
+        "M-Pesa", "Airtel Money",
+        // Kenyan Banks
+        "Equity Bank", "KCB Bank", "Co-operative Bank", "Family Bank", "Absa Bank", "Stanbic Bank", "Standard Chartered Bank", "I&M Bank", "DTB Bank",
+        // International Methods & Banks
+        "PayPal", "Zelle", "Stripe", "Credit/Debit Card", "Bank of America", "HSBC", "Citi", "JPMorgan Chase", "Barclays", "Deutsche Bank"
+    )
+    var selectedPaymentMethod by remember { mutableStateOf(paymentMethods[0]) }
+    var showPaymentDialog by remember { mutableStateOf(false) }
+
+    if (showPaymentDialog) {
+        PaymentGatewayDialog(
+            productName = product.name,
+            quantity = quantity,
+            totalPrice = product.price * quantity,
+            paymentMethod = selectedPaymentMethod,
+            onConfirmPayment = { paymentDetail ->
+                isPlacingOrder = true
+                onPlaceOrder(quantity, selectedPaymentMethod, paymentDetail)
+                showPaymentDialog = false
+            },
+            onDismiss = {
+                showPaymentDialog = false
+            }
+        )
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = tripleSeven)
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(product.name, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = HealthShieldTextDark)
-            Spacer(Modifier.height(4.dp))
             Text(product.description, fontSize = 14.sp, color = Color.Gray)
 
             Divider(modifier = Modifier.padding(vertical = 12.dp))
 
+            // --- Quantity Selector ---
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Quantity:", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { if (quantity > 1) quantity-- }) {
+                        Icon(Icons.Default.Remove, contentDescription = "Decrease quantity")
+                    }
+                    Text(text = quantity.toString(), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    IconButton(onClick = { quantity++ }) {
+                        Icon(Icons.Default.Add, contentDescription = "Increase quantity")
+                    }
+                }
+            }
+
+            // --- Payment Method Selector ---
+            ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
+                TextField(
+                    value = selectedPaymentMethod,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Payment Method") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(unfocusedContainerColor = Color.Transparent, focusedContainerColor = Color.Transparent)
+                )
+                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    paymentMethods.forEach { method ->
+                        DropdownMenuItem(text = { Text(method) }, onClick = {
+                            selectedPaymentMethod = method
+                            expanded = false
+                        })
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // --- Price & Uploader ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Price: ${currencyFormat.format(product.price)}",
-                    fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = HealthShieldTextDark
+                    "Total: ${currencyFormat.format(product.price * quantity)}",
+                    fontWeight = FontWeight.Bold, fontSize = 18.sp, color = tripleSeven
                 )
                 Text("By: ${product.uploadedBy}", fontSize = 12.sp, color = Color.Gray)
             }
 
             Spacer(Modifier.height(16.dp))
 
+            // --- Place Order Button ---
             Button(
                 onClick = {
-                    isPlacingOrder = true
-                    onPlaceOrder()
-                    // isPlacingOrder would be reset by callback/side-effect in a full implementation
+                    showPaymentDialog = true
                 },
                 enabled = !isPlacingOrder,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = tripleSeven)
             ) {
@@ -305,22 +379,133 @@ fun ProductCard(product: Product, onPlaceOrder: () -> Unit) {
     }
 }
 
-// --- PREVIEW ---
-@Preview(showBackground = true)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PreviewPlaceOrderScreen() {
-    // Create a fake ViewModel for preview (so preview shows sample products)
-    val previewVM = object : PlaceOrderViewModel() {
-        init {
-            // populate sample products and set loading=false
-            // We can't call Firebase here in preview; just set the state directly via reflection of the backing fields
-            // But since the backing fields are private, simplest approach: use composition to show a UI sample instead.
+fun PaymentGatewayDialog(
+    productName: String,
+    quantity: Int,
+    totalPrice: Double,
+    paymentMethod: String,
+    onConfirmPayment: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale("en", "KE")) }
+    val formattedPrice = currencyFormat.format(totalPrice)
+    var paymentDetail by remember { mutableStateOf("") }
+    val context = LocalContext.current
+
+    val isPaymentDetailValid = remember(paymentMethod, paymentDetail) {
+        when {
+            paymentMethod.contains("M-Pesa") -> paymentDetail.isNotBlank() && paymentDetail.length >= 10
+            else -> true // No input needed for other methods in this simulation
         }
     }
 
-    // Instead of relying on the VM, use the composable with fake content by providing a small wrapper preview UI:
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Confirm Payment via $paymentMethod") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Please confirm the details below to proceed with your payment to HealthShield254.")
+                Spacer(Modifier.height(8.dp))
+                Text("Product: $productName", fontWeight = FontWeight.SemiBold)
+                Text("Quantity: $quantity", fontWeight = FontWeight.SemiBold)
+                Text("Total Amount: $formattedPrice", fontWeight = FontWeight.Bold, color = tripleSeven)
+                Spacer(Modifier.height(16.dp))
+
+                when {
+                    paymentMethod.contains("M-Pesa") -> {
+                        Text("Enter your M-Pesa number to receive a payment prompt.")
+                        OutlinedTextField(
+                            value = paymentDetail,
+                            onValueChange = { paymentDetail = it },
+                            label = { Text("M-Pesa Number (e.g. 07...)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                            singleLine = true
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text("An STK push will be sent to this number. You will be asked to enter your PIN to authorize the payment.")
+                    }
+                    paymentMethod.contains("Bank") -> {
+                        Text("You will be redirected to your bank's portal to complete the payment of $formattedPrice.")
+                    }
+                    else -> {
+                        Text("You will be redirected to $paymentMethod to complete the payment of $formattedPrice.")
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    Toast.makeText(context, "Initiating payment... Please check your phone for STK push.", Toast.LENGTH_LONG).show()
+                    onConfirmPayment(paymentDetail)
+                },
+                enabled = isPaymentDetailValid,
+                colors = ButtonDefaults.buttonColors(containerColor = tripleSeven)
+            ) {
+                Text("Confirm & Pay")
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+            ) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+
+// --- DIALOG & PREVIEW ---
+
+@Composable
+fun OrderConfirmationDialog(receipt: String, onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                // Watermark
+                Image(
+                    painter = painterResource(id = R.drawable.medicalinsurance),
+                    contentDescription = null, // Decorative
+                    modifier = Modifier
+                        .fillMaxWidth(0.6f)
+                        .alpha(0.1f), // Make it transparent
+                    contentScale = ContentScale.Fit
+                )
+
+                // Content
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Order Confirmed & Approved", style = MaterialTheme.typography.titleLarge)
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        receipt,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(24.dp))
+                    Button(onClick = onDismiss) {
+                        Text("Done")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewPlaceOrderScreen() {
     MaterialTheme {
-        // Quick preview content — matches the real UI but doesn't depend on Firebase
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             ProductCard(
                 product = Product(
@@ -330,7 +515,7 @@ fun PreviewPlaceOrderScreen() {
                     price = 120.0,
                     uploadedBy = "HealthShield Pharmacy"
                 ),
-                onPlaceOrder = { /* no-op for preview */ }
+                onPlaceOrder = { _, _, _ -> /* no-op for preview */ }
             )
         }
     }

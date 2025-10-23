@@ -169,14 +169,13 @@ fun HomeScreen(navController: NavController) {
 
             val dashboardItems = listOf(
                 Triple("HotspotMapScreen", R.drawable.hotspotmap, impressiveColors[0]),
-                Triple("ScanMedicine", R.drawable.scan, impressiveColors[1]),
                 Triple("Report counterfeit", R.drawable.reportcounterfeit, impressiveColors[2]),
                 Triple("Medicine", R.drawable.medicine, impressiveColors[3]),
                 Triple("Profile & Settings", R.drawable.profile, impressiveColors[4]),
                 Triple("Place Order", R.drawable.placeorder, impressiveColors[5]),
                 Triple("Supplier Manufacturer", R.drawable.supplier, impressiveColors[6]),
                 Triple("Analytics Screen", R.drawable.supplier, impressiveColors[7]),
-                Triple("ChatBoard Screen", R.drawable.supplier, impressiveColors[8]),
+                Triple("ChatScreen", R.drawable.supplier, impressiveColors[8]),
             )
 
             LazyRow(
@@ -198,13 +197,12 @@ fun HomeScreen(navController: NavController) {
                                 onClick = {
                                     when (title) {
                                         "HotspotMapScreen" -> navController.navigate(ROUT_HOTSPOTMAP)
-                                        "ScanMedicine" -> navController.navigate(ROUT_SCANMEDICINE)
                                         "Report counterfeit" -> navController.navigate(ROUT_SENDREPORT)
                                         "Medicine" -> navController.navigate(ROUT_VIEW_MEDICINES)
                                         "Place Order" -> navController.navigate(ROUT_PLACEORDER)
                                         "Supplier Manufacturer" -> navController.navigate(ROUT_SUPPLIERMANUFACTURER)
                                         "Analytics Screen" -> navController.navigate(ROUT_ANALYTICSSCREEN)
-                                        "ChatBoard Screen" -> navController.navigate(ROUT_CHATBOARDSCREEN)
+                                        "ChatScreen" -> navController.navigate(ROUT_CHATBOARDSCREEN)
                                         "Profile & Settings" -> navController.navigate(ROUT_PROFILESETTINS)
                                     }
                                 }
