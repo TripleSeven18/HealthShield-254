@@ -1,6 +1,15 @@
 package com.triple7.healthshield254.ui.screens.TradeCenter
 
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.graphics.BitmapFactory
+import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.pdf.PdfDocument
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,6 +19,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddShoppingCart
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,10 +42,13 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.triple7.healthshield254.R
 import com.triple7.healthshield254.ui.theme.tripleSeven
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
+import java.io.IOException
 import java.text.NumberFormat
 import java.util.*
 
@@ -59,11 +72,12 @@ data class Order(
     val productName: String = "",
     val buyerType: String = "",
     val buyerId: String = "",
+    val buyerName: String = "", // Added buyer name
     val quantity: Int = 1,
-    val paymentMethod: String = "", // Added payment method
+    val paymentMethod: String = "",
     val timestamp: Long = System.currentTimeMillis(),
-    val isApproved: Boolean = false, // Will be set to true
-    val receipt: String = "" // Will be populated
+    val isApproved: Boolean = false,
+    val receipt: String = ""
 )
 
 // --- VIEWMODEL FOR DATA FETCHING ---
@@ -121,15 +135,10 @@ open class PlaceOrderViewModel : ViewModel() {
         }
     }
 
-    fun getDatabaseReference(): DatabaseReference? = databaseRef
-
     override fun onCleared() {
         super.onCleared()
-        eventListener?.let { dbRef?.removeEventListener(it) }
+        eventListener?.let { databaseRef?.removeEventListener(it) }
     }
-
-    private val dbRef: DatabaseReference?
-        get() = databaseRef
 }
 
 // --- PLACE ORDER SCREEN ---
@@ -144,6 +153,13 @@ fun PlaceOrderScreen(
     val coroutineScope = rememberCoroutineScope()
     val isPreview = LocalInspectionMode.current
 
+    val user = if (isPreview) null else FirebaseAuth.getInstance().currentUser
+    val userName = remember(user) {
+        user?.displayName?.takeIf { it.isNotBlank() }
+            ?: user?.email?.split('@')?.get(0)?.replaceFirstChar { it.uppercase() }
+            ?: "User"
+    }
+
     val products by viewModel.products
     val loading by viewModel.loading
     val error by viewModel.error
@@ -151,10 +167,40 @@ fun PlaceOrderScreen(
     var showReceiptDialog by remember { mutableStateOf(false) }
     var generatedReceipt by remember { mutableStateOf("") }
 
-    if (showReceiptDialog) {
-        OrderConfirmationDialog(receipt = generatedReceipt) {
-            showReceiptDialog = false
+    val pdfLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult(),
+        onResult = { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                result.data?.data?.let { uri ->
+                    try {
+                        val pdfBytes = createPdfWithWatermark(context, generatedReceipt)
+                        context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                            outputStream.write(pdfBytes)
+                        }
+                        Toast.makeText(context, "Receipt saved successfully!", Toast.LENGTH_SHORT).show()
+                    } catch (e: IOException) {
+                        Toast.makeText(context, "Failed to save receipt: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } else {
+                Toast.makeText(context, "Saving cancelled.", Toast.LENGTH_SHORT).show()
+            }
         }
+    )
+
+    if (showReceiptDialog) {
+        OrderConfirmationDialog(
+            receipt = generatedReceipt,
+            onDismiss = { showReceiptDialog = false },
+            onDownloadPdf = {
+                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "application/pdf"
+                    putExtra(Intent.EXTRA_TITLE, "HealthShield_Receipt_${System.currentTimeMillis()}.pdf")
+                }
+                pdfLauncher.launch(intent)
+            }
+        )
     }
 
     DisposableEffect(viewModel, isPreview) {
@@ -169,11 +215,11 @@ fun PlaceOrderScreen(
     }
 
     Scaffold(
-        containerColor = HealthShieldBackgroundLight,
+        containerColor = Color(0xFFF8F9FA),
         topBar = {
             TopAppBar(
                 title = { Text("Available Products", color = Color.White) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = HealthShieldBlue)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = tripleSeven)
             )
         }
     ) { paddingValues ->
@@ -212,6 +258,7 @@ fun PlaceOrderScreen(
                                             RECEIPT
                                             --------------------------------
                                             Order ID: $orderId
+                                            Buyer Name: $userName
                                             Product: ${product.name}
                                             Quantity: $quantity
                                             Price: ${currencyFormat.format(product.price * quantity)}
@@ -219,7 +266,7 @@ fun PlaceOrderScreen(
                                             Buyer ID: $currentUserId
                                             Status: PAID & APPROVED
                                             --------------------------------
-                                            Thank you for your purchase!
+                                            Thanks for trading with us!!!
                                         """.trimIndent()
 
                                         val newOrder = Order(
@@ -228,6 +275,7 @@ fun PlaceOrderScreen(
                                             productName = product.name,
                                             buyerType = currentUserType,
                                             buyerId = currentUserId,
+                                            buyerName = userName,
                                             quantity = quantity,
                                             paymentMethod = "$paymentMethod$paymentInfo",
                                             isApproved = true,
@@ -296,7 +344,7 @@ fun ProductCard(product: Product, onPlaceOrder: (Int, String, String) -> Unit) {
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(product.name, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = HealthShieldTextDark)
+            Text(product.name, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.Black)
             Text(product.description, fontSize = 14.sp, color = Color.Gray)
 
             Divider(modifier = Modifier.padding(vertical = 12.dp))
@@ -462,7 +510,11 @@ fun PaymentGatewayDialog(
 // --- DIALOG & PREVIEW ---
 
 @Composable
-fun OrderConfirmationDialog(receipt: String, onDismiss: () -> Unit) {
+fun OrderConfirmationDialog(
+    receipt: String,
+    onDismiss: () -> Unit,
+    onDownloadPdf: () -> Unit
+) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
             shape = RoundedCornerShape(16.dp),
@@ -484,23 +536,72 @@ fun OrderConfirmationDialog(receipt: String, onDismiss: () -> Unit) {
                     modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Order Confirmed & Approved", style = MaterialTheme.typography.titleLarge)
+                    Text("Order Confirmed & Approved", style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
                     Spacer(Modifier.height(16.dp))
                     Text(
                         receipt,
                         fontFamily = FontFamily.Monospace,
                         fontSize = 12.sp,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Start
                     )
                     Spacer(Modifier.height(24.dp))
-                    Button(onClick = onDismiss) {
-                        Text("Done")
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Button(onClick = onDismiss, modifier = Modifier.weight(1f)) {
+                            Text("Done")
+                        }
+                        Button(
+                            onClick = onDownloadPdf,
+                            colors = ButtonDefaults.buttonColors(containerColor = tripleSeven),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Download, contentDescription = "Download PDF", modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Save PDF")
+                        }
                     }
                 }
             }
         }
     }
 }
+
+fun createPdfWithWatermark(context: Context, receiptText: String): ByteArray {
+    val document = PdfDocument()
+    val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4 page size
+    val page = document.startPage(pageInfo)
+    val canvas = page.canvas
+
+    // Draw Watermark
+    val watermarkBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.medicalinsurance)
+    val watermarkPaint = Paint().apply { alpha = 30 } // ~12% opacity
+    val canvasWidth = canvas.width
+    val canvasHeight = canvas.height
+    val bitmapWidth = watermarkBitmap.width
+    val bitmapHeight = watermarkBitmap.height
+    val left = (canvasWidth - bitmapWidth) / 2f
+    val top = (canvasHeight - bitmapHeight) / 2f
+    canvas.drawBitmap(watermarkBitmap, left, top, watermarkPaint)
+
+    // Draw Text
+    val textPaint = Paint().apply {
+        color = android.graphics.Color.BLACK
+        textSize = 12f
+        typeface = android.graphics.Typeface.create(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.NORMAL)
+    }
+
+    var y = 40f
+    receiptText.split('\n').forEach { line ->
+        canvas.drawText(line, 10f, y, textPaint)
+        y += textPaint.fontSpacing
+    }
+
+    document.finishPage(page)
+    val outputStream = ByteArrayOutputStream()
+    document.writeTo(outputStream)
+    document.close()
+    return outputStream.toByteArray()
+}
+
 
 @Preview(showBackground = true)
 @Composable
