@@ -46,6 +46,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.triple7.healthshield254.R
 import com.triple7.healthshield254.ui.theme.tripleSeven
+import com.triple7.healthshield254.ui.theme.tripleseven
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -413,7 +414,7 @@ fun ProductCard(product: Product, onPlaceOrder: (Int, String, String) -> Unit) {
                 enabled = !isPlacingOrder,
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = tripleSeven)
+                colors = ButtonDefaults.buttonColors(containerColor = tripleseven)
             ) {
                 if (isPlacingOrder) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
