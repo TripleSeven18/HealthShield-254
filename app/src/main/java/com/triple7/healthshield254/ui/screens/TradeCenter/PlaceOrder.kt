@@ -5,8 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Paint
-import android.graphics.Rect
 import android.graphics.pdf.PdfDocument
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -26,6 +26,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -42,113 +43,82 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.triple7.healthshield254.R
+import com.triple7.healthshield254.models.MedicineUpload
+import com.triple7.healthshield254.models.Order
 import com.triple7.healthshield254.ui.theme.tripleSeven
-import com.triple7.healthshield254.ui.theme.tripleseven
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.text.NumberFormat
 import java.util.*
 
-// --- DATA MODELS ---
-data class Product(
-    val id: String = "",
-    val name: String = "",
-    val description: String = "",
-    val price: Double = 0.0,
-    val uploadedBy: String = "HealthShield Pharmacy"
-)
+/** --- VIEWMODEL --- **/
+class PlaceOrderViewModel : ViewModel() {
+    internal val _products = mutableStateOf<List<MedicineUpload>>(emptyList())
+    val products: State<List<MedicineUpload>> = _products
 
-data class MedicineFromDB(
-    val name: String = "",
-    val dosage: String = ""
-)
-
-data class Order(
-    val id: String = "",
-    val productId: String = "",
-    val productName: String = "",
-    val buyerType: String = "",
-    val buyerId: String = "",
-    val buyerName: String = "", // Added buyer name
-    val quantity: Int = 1,
-    val paymentMethod: String = "",
-    val timestamp: Long = System.currentTimeMillis(),
-    val isApproved: Boolean = false,
-    val receipt: String = ""
-)
-
-// --- VIEWMODEL FOR DATA FETCHING ---
-open class PlaceOrderViewModel : ViewModel() {
-    private val _products = mutableStateOf<List<Product>>(emptyList())
-    val products: State<List<Product>> = _products
-
-    private val _loading = mutableStateOf(true)
+    internal val _loading = mutableStateOf(true)
     val loading: State<Boolean> = _loading
 
-    private val _error = mutableStateOf<String?>(null)
+    internal val _error = mutableStateOf<String?>(null)
     val error: State<String?> = _error
 
-    private var databaseRef: DatabaseReference? = null
-    private var eventListener: ValueEventListener? = null
+    private var listener: ValueEventListener? = null
+    private val dbRef = FirebaseDatabase.getInstance().getReference("products")
 
-    fun startListeningForProducts() {
+    fun startListeningForProducts(currentUserType: String) {
         viewModelScope.launch {
             _loading.value = true
-
-            if (databaseRef == null) {
-                databaseRef = FirebaseDatabase.getInstance().getReference("medicines")
-            }
-            val database = databaseRef ?: run {
-                _error.value = "Database not available"
-                _loading.value = false
-                return@launch
+            val rolesToFetch = when (currentUserType) {
+                "Customer" -> listOf("Pharmacist")
+                "Pharmacist" -> listOf("Supplier", "Company")
+                "Supplier" -> listOf("Company")
+                else -> listOf("Pharmacist", "Supplier", "Company")
             }
 
-            eventListener = object : ValueEventListener {
+            listener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    val productList = snapshot.children.mapNotNull { dataSnapshot ->
-                        val medicine = dataSnapshot.getValue(MedicineFromDB::class.java)
-                        medicine?.let {
-                            Product(
-                                id = dataSnapshot.key ?: "",
-                                name = it.name,
-                                description = it.dosage,
-                                price = 150.00 // placeholder
-                            )
+                    val list = mutableListOf<MedicineUpload>()
+                    for (snap in snapshot.children) {
+                        try {
+                            val product = snap.getValue(MedicineUpload::class.java)
+                            if (product != null && product.uploaderType in rolesToFetch && !product.name.isNullOrBlank()) {
+                                list.add(product)
+                            }
+                        } catch (e: Exception) {
+                            Log.e("PlaceOrderViewModel", "Error converting to MedicineUpload", e)
                         }
                     }
-                    _products.value = productList
+                    _products.value = list
                     _loading.value = false
-                    _error.value = null
                 }
 
-                override fun onCancelled(databaseError: DatabaseError) {
-                    _error.value = databaseError.message
+                override fun onCancelled(error: DatabaseError) {
+                    _error.value = error.message
                     _loading.value = false
                 }
             }
-
-            database.addValueEventListener(eventListener!!)
+            dbRef.addValueEventListener(listener!!)
         }
     }
 
     override fun onCleared() {
+        listener?.let { dbRef.removeEventListener(it) }
         super.onCleared()
-        eventListener?.let { databaseRef?.removeEventListener(it) }
     }
 }
 
-// --- PLACE ORDER SCREEN ---
+/** --- MAIN SCREEN --- **/
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaceOrderScreen(
-    currentUserType: String = "Distributor",
-    currentUserId: String = "user123",
-    viewModel: PlaceOrderViewModel = viewModel(),
+    currentUserType: String,
+    currentUserId: String,
+    viewModel: PlaceOrderViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -157,7 +127,7 @@ fun PlaceOrderScreen(
     val user = if (isPreview) null else FirebaseAuth.getInstance().currentUser
     val userName = remember(user) {
         user?.displayName?.takeIf { it.isNotBlank() }
-            ?: user?.email?.split('@')?.get(0)?.replaceFirstChar { it.uppercase() }
+            ?: user?.email?.substringBefore("@")?.replaceFirstChar { it.uppercase() }
             ?: "User"
     }
 
@@ -169,25 +139,24 @@ fun PlaceOrderScreen(
     var generatedReceipt by remember { mutableStateOf("") }
 
     val pdfLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult(),
-        onResult = { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                result.data?.data?.let { uri ->
-                    try {
-                        val pdfBytes = createPdfWithWatermark(context, generatedReceipt)
-                        context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                            outputStream.write(pdfBytes)
-                        }
-                        Toast.makeText(context, "Receipt saved successfully!", Toast.LENGTH_SHORT).show()
-                    } catch (e: IOException) {
-                        Toast.makeText(context, "Failed to save receipt: ${e.message}", Toast.LENGTH_LONG).show()
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.data?.let { uri ->
+                try {
+                    val pdfBytes = createPdfWithWatermark(context, generatedReceipt)
+                    context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                        outputStream.write(pdfBytes)
                     }
+                    Toast.makeText(context, "Receipt saved successfully!", Toast.LENGTH_SHORT).show()
+                } catch (e: IOException) {
+                    Toast.makeText(context, "Failed to save receipt: ${e.message}", Toast.LENGTH_LONG).show()
                 }
-            } else {
-                Toast.makeText(context, "Saving cancelled.", Toast.LENGTH_SHORT).show()
             }
+        } else {
+            Toast.makeText(context, "Saving cancelled.", Toast.LENGTH_SHORT).show()
         }
-    )
+    }
 
     if (showReceiptDialog) {
         OrderConfirmationDialog(
@@ -204,14 +173,12 @@ fun PlaceOrderScreen(
         )
     }
 
-    DisposableEffect(viewModel, isPreview) {
-        if (!isPreview) {
-            viewModel.startListeningForProducts()
-        }
-        onDispose { /* ViewModel handles cleanup */ }
+    DisposableEffect(Unit) {
+        if (!isPreview) viewModel.startListeningForProducts(currentUserType)
+        onDispose { }
     }
 
-    val firebaseRootRef: DatabaseReference? = remember {
+    val firebaseRootRef = remember {
         if (!isPreview) FirebaseDatabase.getInstance().reference else null
     }
 
@@ -219,77 +186,66 @@ fun PlaceOrderScreen(
         containerColor = Color(0xFFF8F9FA),
         topBar = {
             TopAppBar(
-                title = { Text("Available Products", color = Color.White) },
+                title = { Text("Place Order", color = Color.White) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = tripleSeven)
             )
         }
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
+        Box(Modifier.fillMaxSize().padding(paddingValues)) {
+            Image(
+                painter = painterResource(id = R.drawable.medicalinsurance),
+                contentDescription = "Watermark",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(0.05f),
+                contentScale = ContentScale.Fit
+            )
             when {
                 loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 error != null -> Text("Error: $error", color = Color.Red, modifier = Modifier.align(Alignment.Center))
-                products.isEmpty() -> Text("No products available.", color = Color.Gray, modifier = Modifier.align(Alignment.Center))
+                products.isEmpty() -> Text("No available products to order.", color = Color.Gray, modifier = Modifier.align(Alignment.Center))
                 else -> {
                     LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(vertical = 16.dp, horizontal = 16.dp),
-                        modifier = Modifier.fillMaxSize()
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        items(products, key = { it.id }) { product ->
+                        items(products, key = { it.id ?: UUID.randomUUID().toString() }) { product ->
                             ProductCard(
                                 product = product,
                                 onPlaceOrder = { quantity, paymentMethod, paymentDetail ->
-                                    if (firebaseRootRef == null) {
-                                        Toast.makeText(context, "Preview: Order for ${product.name} simulated", Toast.LENGTH_SHORT).show()
-                                        return@ProductCard
-                                    }
-
                                     coroutineScope.launch {
-                                        val orderId = firebaseRootRef.child("orders").push().key ?: return@launch
-
-                                        val currencyFormat = NumberFormat.getCurrencyInstance(Locale("en", "KE"))
-                                        val paymentInfo = if (paymentDetail.isNotBlank()) " from $paymentDetail" else ""
-                                        val receiptContent = """
-                                            HealthShield254
-                                            ================================
-                                            RECEIPT
-                                            --------------------------------
-                                            Order ID: $orderId
-                                            Buyer Name: $userName
-                                            Product: ${product.name}
-                                            Quantity: $quantity
-                                            Price: ${currencyFormat.format(product.price * quantity)}
-                                            Payment Method: $paymentMethod$paymentInfo
-                                            Buyer ID: $currentUserId
-                                            Status: PAID & APPROVED
-                                            --------------------------------
-                                            Thanks for trading with us!!!
-                                        """.trimIndent()
-
-                                        val newOrder = Order(
+                                        val orderId = firebaseRootRef?.child("orders")?.push()?.key ?: return@launch
+                                        val priceAsDouble = product.price?.toDoubleOrNull() ?: 0.0
+                                        val receiptText = createReceiptText(
+                                            orderId = orderId,
+                                            buyerName = userName,
+                                            product = product,
+                                            quantity = quantity,
+                                            paymentMethod = paymentMethod,
+                                            paymentDetail = paymentDetail,
+                                            buyerId = currentUserId,
+                                            totalPrice = priceAsDouble * quantity
+                                        )
+                                        val order = Order(
                                             id = orderId,
-                                            productId = product.id,
+                                            productId = product.id ?: "",
                                             productName = product.name,
                                             buyerType = currentUserType,
                                             buyerId = currentUserId,
                                             buyerName = userName,
+                                            sellerId = product.uploaderId,
                                             quantity = quantity,
-                                            paymentMethod = "$paymentMethod$paymentInfo",
+                                            paymentMethod = paymentMethod,
                                             isApproved = true,
-                                            receipt = receiptContent
+                                            receipt = receiptText
                                         )
-
-                                        firebaseRootRef.child("orders").child(orderId).setValue(newOrder)
+                                        firebaseRootRef.child("orders").child(orderId).setValue(order)
                                             .addOnSuccessListener {
-                                                generatedReceipt = receiptContent
+                                                generatedReceipt = receiptText
                                                 showReceiptDialog = true
                                             }
-                                            .addOnFailureListener {
-                                                Toast.makeText(context, "Order failed: ${it.message}", Toast.LENGTH_LONG).show()
+                                            .addOnFailureListener { e ->
+                                                Toast.makeText(context, "Order failed: ${e.message}", Toast.LENGTH_LONG).show()
                                             }
                                     }
                                 }
@@ -302,30 +258,28 @@ fun PlaceOrderScreen(
     }
 }
 
-// --- PRODUCT CARD ---
+/** --- PRODUCT CARD --- **/
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProductCard(product: Product, onPlaceOrder: (Int, String, String) -> Unit) {
-    val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale("en", "KE")) }
+fun ProductCard(
+    product: MedicineUpload,
+    onPlaceOrder: (quantity: Int, paymentMethod: String, paymentDetail: String) -> Unit
+) {
+    val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale("en", "ke")) }
+    val price = product.price?.toDoubleOrNull() ?: 0.0
+
     var isPlacingOrder by remember { mutableStateOf(false) }
-    var quantity by remember { mutableStateOf(1) }
+    var quantity by remember { mutableIntStateOf(1) }
     var expanded by remember { mutableStateOf(false) }
-    val paymentMethods = listOf(
-        // Mobile Money
-        "M-Pesa", "Airtel Money",
-        // Kenyan Banks
-        "Equity Bank", "KCB Bank", "Co-operative Bank", "Family Bank", "Absa Bank", "Stanbic Bank", "Standard Chartered Bank", "I&M Bank", "DTB Bank",
-        // International Methods & Banks
-        "PayPal", "Zelle", "Stripe", "Credit/Debit Card", "Bank of America", "HSBC", "Citi", "JPMorgan Chase", "Barclays", "Deutsche Bank"
-    )
+    val paymentMethods = listOf("M-Pesa", "Airtel Money", "KCB Bank", "Equity Bank", "Family Bank", "PayPal")
     var selectedPaymentMethod by remember { mutableStateOf(paymentMethods[0]) }
     var showPaymentDialog by remember { mutableStateOf(false) }
 
     if (showPaymentDialog) {
         PaymentGatewayDialog(
-            productName = product.name,
+            productName = product.name ?: "Unknown",
             quantity = quantity,
-            totalPrice = product.price * quantity,
+            totalPrice = price * quantity,
             paymentMethod = selectedPaymentMethod,
             onConfirmPayment = { paymentDetail ->
                 isPlacingOrder = true
@@ -339,14 +293,37 @@ fun ProductCard(product: Product, onPlaceOrder: (Int, String, String) -> Unit) {
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(product.name, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.Black)
-            Text(product.description, fontSize = 14.sp, color = Color.Gray)
+
+            // --- Product Image ---
+            if (product.imageUrls.isNotEmpty()) {
+                Image(
+                    painter = rememberAsyncImagePainter(product.imageUrls.first()),
+                    contentDescription = "Product Image",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            // --- Product Info ---
+            Text(product.name ?: "Unknown Product", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.Black)
+            Spacer(modifier = Modifier.height(4.dp))
+            product.description?.let { Text("Description: $it", fontSize = 14.sp, color = Color.Gray) }
+            product.brand?.let { Text("Brand: $it", fontSize = 14.sp, color = Color.Gray) }
+            product.category?.let { Text("Category: $it", fontSize = 14.sp, color = Color.Gray) }
+            product.dosage?.let { Text("Dosage: $it", fontSize = 14.sp, color = Color.Gray) }
+            product.sideEffects?.let { Text("Side Effects: $it", fontSize = 14.sp, color = Color.Gray) }
+            product.warnings?.let { Text("Warnings: $it", fontSize = 14.sp, color = Color.Gray) }
+            product.phoneNumber?.let { Text("Contact: $it", fontSize = 14.sp, color = Color.Gray) }
 
             Divider(modifier = Modifier.padding(vertical = 12.dp))
 
@@ -376,8 +353,17 @@ fun ProductCard(product: Product, onPlaceOrder: (Int, String, String) -> Unit) {
                     readOnly = true,
                     label = { Text("Payment Method") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth(),
-                    colors = TextFieldDefaults.colors(unfocusedContainerColor = Color.Transparent, focusedContainerColor = Color.Transparent)
+                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable).fillMaxWidth(),
+                    colors = ExposedDropdownMenuDefaults.textFieldColors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
+                        errorContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent,
+                        errorIndicatorColor = Color.Transparent
+                    )
                 )
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     paymentMethods.forEach { method ->
@@ -398,23 +384,23 @@ fun ProductCard(product: Product, onPlaceOrder: (Int, String, String) -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Total: ${currencyFormat.format(product.price * quantity)}",
+                    "Total: ${currencyFormat.format(price * quantity)}",
                     fontWeight = FontWeight.Bold, fontSize = 18.sp, color = tripleSeven
                 )
-                Text("By: ${product.uploadedBy}", fontSize = 12.sp, color = Color.Gray)
+                product.uploaderName?.let {
+                    Text("By: $it", fontSize = 12.sp, color = Color.Gray)
+                }
             }
 
             Spacer(Modifier.height(16.dp))
 
             // --- Place Order Button ---
             Button(
-                onClick = {
-                    showPaymentDialog = true
-                },
+                onClick = { showPaymentDialog = true },
                 enabled = !isPlacingOrder,
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = tripleseven)
+                colors = ButtonDefaults.buttonColors(containerColor = tripleSeven)
             ) {
                 if (isPlacingOrder) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
@@ -428,6 +414,8 @@ fun ProductCard(product: Product, onPlaceOrder: (Int, String, String) -> Unit) {
     }
 }
 
+/** --- DIALOGS AND HELPERS --- **/
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PaymentGatewayDialog(
@@ -438,15 +426,15 @@ fun PaymentGatewayDialog(
     onConfirmPayment: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale("en", "KE")) }
+    val currencyFormat = remember { NumberFormat.getCurrencyInstance(Locale("en", "ke")) }
     val formattedPrice = currencyFormat.format(totalPrice)
     var paymentDetail by remember { mutableStateOf("") }
     val context = LocalContext.current
 
     val isPaymentDetailValid = remember(paymentMethod, paymentDetail) {
         when {
-            paymentMethod.contains("M-Pesa") -> paymentDetail.isNotBlank() && paymentDetail.length >= 10
-            else -> true // No input needed for other methods in this simulation
+            paymentMethod.contains("M-Pesa") || paymentMethod.contains("Airtel Money") -> paymentDetail.isNotBlank() && paymentDetail.length >= 10
+            else -> true
         }
     }
 
@@ -463,17 +451,15 @@ fun PaymentGatewayDialog(
                 Spacer(Modifier.height(16.dp))
 
                 when {
-                    paymentMethod.contains("M-Pesa") -> {
-                        Text("Enter your M-Pesa number to receive a payment prompt.")
+                    paymentMethod.contains("M-Pesa") || paymentMethod.contains("Airtel Money") -> {
+                        Text("Enter your mobile number to receive a payment prompt. You will be asked to enter your PIN to authorize the payment.")
                         OutlinedTextField(
                             value = paymentDetail,
                             onValueChange = { paymentDetail = it },
-                            label = { Text("M-Pesa Number (e.g. 07...)") },
+                            label = { Text("Phone Number (e.g. 07...)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                             singleLine = true
                         )
-                        Spacer(Modifier.height(8.dp))
-                        Text("An STK push will be sent to this number. You will be asked to enter your PIN to authorize the payment.")
                     }
                     paymentMethod.contains("Bank") -> {
                         Text("You will be redirected to your bank's portal to complete the payment of $formattedPrice.")
@@ -507,9 +493,6 @@ fun PaymentGatewayDialog(
     )
 }
 
-
-// --- DIALOG & PREVIEW ---
-
 @Composable
 fun OrderConfirmationDialog(
     receipt: String,
@@ -517,48 +500,20 @@ fun OrderConfirmationDialog(
     onDownloadPdf: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                // Watermark
-                Image(
-                    painter = painterResource(id = R.drawable.medicalinsurance),
-                    contentDescription = null, // Decorative
-                    modifier = Modifier
-                        .fillMaxWidth(0.6f)
-                        .alpha(0.1f), // Make it transparent
-                    contentScale = ContentScale.Fit
-                )
-
-                // Content
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text("Order Confirmed & Approved", style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
-                    Spacer(Modifier.height(16.dp))
-                    Text(
-                        receipt,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 12.sp,
-                        textAlign = TextAlign.Start
-                    )
-                    Spacer(Modifier.height(24.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Button(onClick = onDismiss, modifier = Modifier.weight(1f)) {
-                            Text("Done")
-                        }
-                        Button(
-                            onClick = onDownloadPdf,
-                            colors = ButtonDefaults.buttonColors(containerColor = tripleSeven),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(Icons.Default.Download, contentDescription = "Download PDF", modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Save PDF")
-                        }
+        Surface(shape = RoundedCornerShape(16.dp), tonalElevation = 12.dp) {
+            Column(Modifier.padding(16.dp)) {
+                Text("Order Confirmed!", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = tripleSeven)
+                Spacer(Modifier.height(12.dp))
+                Text(receipt, fontSize = 14.sp)
+                Spacer(Modifier.height(16.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Button(onClick = onDownloadPdf, colors = ButtonDefaults.buttonColors(containerColor = tripleSeven)) {
+                        Icon(Icons.Default.Download, contentDescription = "Download")
+                        Spacer(Modifier.width(8.dp))
+                        Text("Download PDF", color = Color.White)
+                    }
+                    Button(onClick = onDismiss, colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)) {
+                        Text("Close", color = Color.White)
                     }
                 }
             }
@@ -566,59 +521,117 @@ fun OrderConfirmationDialog(
     }
 }
 
-fun createPdfWithWatermark(context: Context, receiptText: String): ByteArray {
-    val document = PdfDocument()
-    val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4 page size
-    val page = document.startPage(pageInfo)
-    val canvas = page.canvas
-
-    // Draw Watermark
-    val watermarkBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.medicalinsurance)
-    val watermarkPaint = Paint().apply { alpha = 30 } // ~12% opacity
-    val canvasWidth = canvas.width
-    val canvasHeight = canvas.height
-    val bitmapWidth = watermarkBitmap.width
-    val bitmapHeight = watermarkBitmap.height
-    val left = (canvasWidth - bitmapWidth) / 2f
-    val top = (canvasHeight - bitmapHeight) / 2f
-    canvas.drawBitmap(watermarkBitmap, left, top, watermarkPaint)
-
-    // Draw Text
-    val textPaint = Paint().apply {
-        color = android.graphics.Color.BLACK
-        textSize = 12f
-        typeface = android.graphics.Typeface.create(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.NORMAL)
-    }
-
-    var y = 40f
-    receiptText.split('\n').forEach { line ->
-        canvas.drawText(line, 10f, y, textPaint)
-        y += textPaint.fontSpacing
-    }
-
-    document.finishPage(page)
-    val outputStream = ByteArrayOutputStream()
-    document.writeTo(outputStream)
-    document.close()
-    return outputStream.toByteArray()
+fun createReceiptText(
+    orderId: String,
+    buyerName: String,
+    product: MedicineUpload,
+    quantity: Int,
+    paymentMethod: String,
+    paymentDetail: String,
+    buyerId: String,
+    totalPrice: Double
+): String {
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale("en", "ke"))
+    val paymentInfo = if (paymentDetail.isNotBlank()) " $paymentDetail" else ""
+    return """
+        HealthShield254
+        ================================
+        RECEIPT
+        --------------------------------
+        Order ID: $orderId
+        Buyer Name: $buyerName
+        Product: ${product.name}
+        Quantity: $quantity
+        Price: ${currencyFormat.format(totalPrice)}
+        Payment Method: $paymentMethod$paymentInfo
+        Buyer ID: $buyerId
+        Status: PAID & APPROVED
+        --------------------------------
+        Thanks for trading with us!!!
+    """.trimIndent()
 }
 
+fun createPdfWithWatermark(context: Context, receipt: String): ByteArray {
+    val pdfDocument = PdfDocument()
+    val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
+    val page = pdfDocument.startPage(pageInfo)
+    val canvas = page.canvas
+    val paint = Paint().apply {
+        textSize = 12f
+        color = android.graphics.Color.BLACK
+    }
 
+    // Load the watermark image
+    val watermarkBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.medicalinsurance)
+    val watermarkPaint = Paint().apply {
+        alpha = 30 // Set transparency
+    }
+    // Calculate position to center the watermark
+    val centerX = (canvas.width - watermarkBitmap.width) / 2f
+    val centerY = (canvas.height - watermarkBitmap.height) / 2f
+    canvas.drawBitmap(watermarkBitmap, centerX, centerY, watermarkPaint)
+
+    val lines = receipt.lines()
+    var yPosition = 50
+    for (line in lines) {
+        canvas.drawText(line, 50f, yPosition.toFloat(), paint)
+        yPosition += 20
+    }
+
+    pdfDocument.finishPage(page)
+    val outputStream = ByteArrayOutputStream()
+    pdfDocument.writeTo(outputStream)
+    pdfDocument.close()
+    return outputStream.toByteArray()
+}
 @Preview(showBackground = true)
 @Composable
 fun PreviewPlaceOrderScreen() {
+    val mockProducts = listOf(
+        MedicineUpload(
+            id = "1",
+            name = "Paracetamol",
+            description = "Pain reliever",
+            brand = "HealthBrand",
+            category = "Painkiller",
+            dosage = "500mg",
+            sideEffects = "None",
+            warnings = "Do not exceed 4 tablets/day",
+            price = "50",
+            uploaderName = "Pharmacy A",
+            imageUrls = listOf()
+        ),
+        MedicineUpload(
+            id = "2",
+            name = "Amoxicillin",
+            description = "Antibiotic",
+            brand = "BioPharma",
+            category = "Antibiotic",
+            dosage = "250mg",
+            sideEffects = "Nausea",
+            warnings = "Finish full course",
+            price = "120",
+            uploaderName = "Pharmacy B",
+            imageUrls = listOf()
+        )
+    )
+
+    // Instead of subclassing, just use a simple holder with State
+    val productsState = remember { mutableStateOf(mockProducts) }
+    val loadingState = remember { mutableStateOf(false) }
+    val errorState = remember { mutableStateOf<String?>(null) }
+
+    val fakeViewModel = object {
+        val products: State<List<MedicineUpload>> = productsState
+        val loading: State<Boolean> = loadingState
+        val error: State<String?> = errorState
+    }
+
     MaterialTheme {
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            ProductCard(
-                product = Product(
-                    id = "sample-1",
-                    name = "Paracetamol 500mg",
-                    description = "Pain & fever relief - 20 tablets",
-                    price = 120.0,
-                    uploadedBy = "HealthShield Pharmacy"
-                ),
-                onPlaceOrder = { _, _, _ -> /* no-op for preview */ }
-            )
-        }
+        PlaceOrderScreen(
+            currentUserType = "Customer",
+            currentUserId = "PreviewUser",
+            viewModel = fakeViewModel as PlaceOrderViewModel // we can adjust the screen to accept a simpler interface for preview
+        )
     }
 }

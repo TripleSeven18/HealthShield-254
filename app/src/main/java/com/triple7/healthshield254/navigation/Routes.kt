@@ -20,12 +20,14 @@ const val ROUT_LAUNCHSCREEN= "LaunchScreen"
 const val ROUT_CHATBOARDSCREEN= "ChatScreen"
 const val ROUT_ANALYTICSSCREEN= "AnalyticsScreen"
 const val ROUT_SCANMEDICINE= "ScanMedicine"
+const val ROUT_VIEWORDERS= "ViewOrders"
 const val ROUT_EDITPROFILE= "EditProfile"
+const val ROUTE_SELLERDASHBOARD= "SellerDashboardScreen"
 
 
 //Medicine
 // Medicines
-const val ROUT_ADD_MEDICINE = "addMedicine"
+const val ROUT_ADD_MEDICINE = "uploadMedicine"
 const val ROUT_VIEW_MEDICINES = "viewMedicines"
 const val ROUT_UPDATE_MEDICINE = "update_medicine/{medicineId}"
 

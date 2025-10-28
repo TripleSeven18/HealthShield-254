@@ -18,8 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.triple7.healthshield254.navigation.ROUT_ADD_MEDICINE
+import com.triple7.healthshield254.navigation.ROUT_VIEWORDERS
 import com.triple7.healthshield254.navigation.ROUT_VIEWREPORT
 import com.triple7.healthshield254.ui.theme.tripleSeven
+import com.triple7.healthshield254.ui.theme.tripleseven
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,7 +41,7 @@ fun AdminScreen(navController: NavController) {
             Text(
                 text = "HealthShield Admin Dashboard",
                 style = MaterialTheme.typography.headlineSmall,
-                color = tripleSeven,
+                color = tripleseven,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
@@ -49,7 +51,7 @@ fun AdminScreen(navController: NavController) {
             Text(
                 text = "Manage and monitor the HealthShield system efficiently.",
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color.Gray,
+                color = Color.Black,
                 textAlign = TextAlign.Center
             )
 
@@ -105,10 +107,10 @@ val dashboardItems = listOf(
         "analytics"
     ),
     DashboardItem(
-        "Notifications",
-        "Manage alerts and announcements.",
+        "View Orders",
+        "view and manage all orders",
         Color(0xFF03A9F4),
-        "notifications"
+        ROUT_VIEWORDERS
     ),
 )
 

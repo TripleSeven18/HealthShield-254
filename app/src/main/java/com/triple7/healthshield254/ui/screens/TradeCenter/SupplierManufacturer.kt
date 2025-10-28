@@ -33,8 +33,8 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.google.firebase.firestore.FirebaseFirestore
 import com.triple7.healthshield254.R
-import com.triple7.healthshield254.ui.theme.triple777
 import com.triple7.healthshield254.ui.theme.tripleSeven
+import com.triple7.healthshield254.ui.theme.tripleseven
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 

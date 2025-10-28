@@ -7,10 +7,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.triple7.healthshield254.ui.screens.TradeCenter.AnalyticsScreen
-import com.triple7.healthshield254.ui.screens.TradeCenter.PlaceOrderScreen
+import com.triple7.healthshield254.ui.screens.TradeCenter.SellerDashboardScreen
 import com.triple7.healthshield254.ui.screens.TradeCenter.SupplierManufacturerDashboard
-import com.triple7.healthshield254.ui.screens.admin.AddMedicineScreen
 import com.triple7.healthshield254.ui.screens.admin.AdminScreen
+import com.triple7.healthshield254.ui.screens.admin.UploadProductScreen
+import com.triple7.healthshield254.ui.screens.admin.ViewOrdersScreen
 import com.triple7.healthshield254.ui.screens.auth.LaunchScreen
 import com.triple7.healthshield254.ui.screens.auth.LoginScreen
 import com.triple7.healthshield254.ui.screens.auth.RegistrationScreen
@@ -25,6 +26,7 @@ import com.triple7.healthshield254.ui.screens.reportmedicine.ReportScreen
 import com.triple7.healthshield254.ui.screens.reportmedicine.ScanMedicine
 import com.triple7.healthshield254.ui.screens.reportmedicine.ViewReport
 import com.triple7.healthshield254.ui.screens.splash.SplashScreen
+import com.triple7.healthshield254.ui.screens.TradeCenter.PlaceOrderScreen
 import com.triple7.healthshield254.ui.screens.verificationrecords.ScanHistoryScreen
 import com.triple7.healthshield254.ui.screens.verify.ScanVerifyScreen
 
@@ -123,6 +125,9 @@ fun AppNavHost(
         composable(ROUT_SCANMEDICINE) {
             ScanMedicine(navController)
         }
+        composable(ROUT_VIEWORDERS) {
+            ViewOrdersScreen(navController, currentUserId = "user1234")
+        }
 
         // --- Place Order Screen ---
         composable(ROUT_PLACEORDER) {
@@ -135,10 +140,13 @@ fun AppNavHost(
 
         // Medicines
         composable(ROUT_ADD_MEDICINE) {
-            AddMedicineScreen(navController)
+            UploadProductScreen(navController,currentUserType = "Pharmacist", currentUserId = "previewUser")
         }
         composable(ROUT_VIEW_MEDICINES) {
             MedicinesScreen(navController)
+        }
+        composable(ROUTE_SELLERDASHBOARD) {
+            SellerDashboardScreen(navController,"Pharmacist", "previewUser")
         }
 
 

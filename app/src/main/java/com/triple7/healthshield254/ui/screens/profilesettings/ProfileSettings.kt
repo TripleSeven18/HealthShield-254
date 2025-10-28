@@ -34,7 +34,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.triple7.healthshield254.navigation.ROUT_EDITPROFILE
 import com.triple7.healthshield254.navigation.ROUT_LOGIN
 import com.triple7.healthshield254.ui.theme.HealthShield254Theme
-import com.triple7.healthshield254.ui.theme.tripleS
 import com.triple7.healthshield254.ui.theme.tripleSeven
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -124,7 +123,7 @@ fun ProfileCard(navController: NavController, photoUrl: String, name: String, em
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = tripleS),
+        colors = CardDefaults.cardColors(containerColor = tripleSeven),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Column(

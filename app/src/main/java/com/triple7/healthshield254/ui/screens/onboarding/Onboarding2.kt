@@ -5,23 +5,18 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -33,7 +28,6 @@ import androidx.navigation.compose.rememberNavController
 import com.airbnb.lottie.compose.*
 import com.triple7.healthshield254.R
 import com.triple7.healthshield254.navigation.ROUT_HOME
-import com.triple7.healthshield254.ui.theme.triple777
 import com.triple7.healthshield254.ui.theme.tripleSeven
 import kotlinx.coroutines.delay
 
@@ -90,7 +84,7 @@ fun Onboarding2(navController: NavController) {
 
                 LottieAnimation(
                     composition = composition,
-                    progress = progress,
+                    progress = { progress },
                     modifier = Modifier
                         .size(250.dp)
                         .padding(top = 8.dp)
@@ -149,7 +143,7 @@ fun CarouselFeatureCards() {
         Triple(R.drawable.medicalinsurance, "Personal Health Dashboard", "Track scans, alerts, and verification results securely.")
     )
 
-    var currentIndex by remember { mutableStateOf(0) }
+    var currentIndex by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -166,7 +160,7 @@ fun CarouselFeatureCards() {
             horizontalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             items(features.size) { index ->
-                val (imageRes, title, desc) = features[index]
+                val (_, title, desc) = features[index]
                 Card(
                     modifier = Modifier
                         .width(340.dp)

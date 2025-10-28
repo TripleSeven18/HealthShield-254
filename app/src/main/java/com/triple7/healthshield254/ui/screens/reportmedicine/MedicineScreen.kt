@@ -9,8 +9,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,8 +29,6 @@ import coil.compose.AsyncImage
 import com.triple7.healthshield254.data.MedicineViewModel
 import com.triple7.healthshield254.models.MedicineUpload
 import com.triple7.healthshield254.navigation.ROUT_ADD_MEDICINE
-import com.triple7.healthshield254.navigation.ROUT_UPDATE_MEDICINE
-import com.triple7.healthshield254.ui.screens.admin.AddMedicineScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -182,10 +178,10 @@ fun MedicineCard(
             modifier = Modifier.padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Medicine Image
-            medicine.imageUrl?.let { imageUrl ->
+            // Medicine Image - FIX: Use `imageUrls` list
+            if (medicine.imageUrls.isNotEmpty()) {
                 AsyncImage(
-                    model = imageUrl,
+                    model = medicine.imageUrls.first(), // Display the first image
                     contentDescription = "Medicine Image",
                     modifier = Modifier
                         .height(120.dp)
