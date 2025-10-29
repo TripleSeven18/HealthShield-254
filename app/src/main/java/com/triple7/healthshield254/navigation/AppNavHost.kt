@@ -126,7 +126,7 @@ fun AppNavHost(
             ScanMedicine(navController)
         }
         composable(ROUT_VIEWORDERS) {
-            ViewOrdersScreen(navController, currentUserId = "user1234")
+            ViewOrdersScreen(navController = rememberNavController(), adminId = "previewUser")
         }
 
         // --- Place Order Screen ---

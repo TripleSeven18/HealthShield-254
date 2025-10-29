@@ -1,38 +1,14 @@
 package com.triple7.healthshield254.ui.screens.admin
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,25 +18,39 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.Query
-import com.google.firebase.database.ValueEventListener
-import com.triple7.healthshield254.models.Order
+import androidx.navigation.compose.rememberNavController
+import com.google.firebase.database.*
 import com.triple7.healthshield254.ui.theme.tripleSeven
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
-/** --- VIEW ORDERS VIEWMODEL --- **/
+// ---------------------------
+// 🧩 Data Model (matches Firebase exactly)
+// ---------------------------
+data class Order(
+    val id: String = "",
+    val buyerId: String = "",
+    val buyerName: String = "",
+    val buyerType: String = "",
+    val paymentMethod: String = "",
+    val productId: String = "",
+    val productName: String = "",
+    val quantity: Int = 0,
+    val sellerId: String = "",
+    val timestamp: Long = 0L,
+    val approved: Boolean = false,
+    val receipt: String = ""
+) {
+    val orderId: String get() = id
+}
+
+// ---------------------------
+// 🧠 ViewModel
+// ---------------------------
 class ViewOrdersViewModel : ViewModel() {
-    private val _orders = mutableStateOf<List<Order>>(emptyList())
-    val orders: State<List<Order>> = _orders
+    private val _allOrders = mutableStateOf<List<Order>>(emptyList())
+    val allOrders: State<List<Order>> = _allOrders
 
     private val _loading = mutableStateOf(true)
     val loading: State<Boolean> = _loading
@@ -68,108 +58,154 @@ class ViewOrdersViewModel : ViewModel() {
     private val _error = mutableStateOf<String?>(null)
     val error: State<String?> = _error
 
-    private var orderListener: ValueEventListener? = null
+    private var listener: ValueEventListener? = null
     private var dbRef: Query? = null
 
-    fun startListeningForOrders(sellerId: String) {
-        if (sellerId.isBlank()) {
+    fun startListeningForAdminOrders(adminId: String) {
+        if (adminId.isBlank()) {
+            _error.value = "Admin ID missing."
             _loading.value = false
-            _error.value = "Current user ID is not available."
             return
         }
 
-        viewModelScope.launch {
-            _loading.value = true
-            dbRef = FirebaseDatabase.getInstance().getReference("orders")
-                .orderByChild("sellerId")
-                .equalTo(sellerId)
+        val db = FirebaseDatabase.getInstance().getReference("orders")
+        dbRef = db.orderByChild("sellerId").equalTo(adminId)
 
-            orderListener = object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val orderList = snapshot.children.mapNotNull { data ->
-                        data.getValue(Order::class.java)
-                    }.sortedByDescending { it.timestamp }
-                    _orders.value = orderList
-                    _loading.value = false
-                }
+        listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val list = snapshot.children.mapNotNull {
+                    it.getValue(Order::class.java)
+                }.sortedByDescending { it.timestamp }
 
-                override fun onCancelled(databaseError: DatabaseError) {
-                    _error.value = databaseError.message
-                    _loading.value = false
-                }
+                _allOrders.value = list
+                _loading.value = false
             }
-            dbRef?.addValueEventListener(orderListener!!)
+
+            override fun onCancelled(error: DatabaseError) {
+                _error.value = error.message
+                _loading.value = false
+            }
         }
+
+        dbRef?.addValueEventListener(listener!!)
     }
 
     override fun onCleared() {
-        orderListener?.let { dbRef?.removeEventListener(it) }
+        listener?.let { dbRef?.removeEventListener(it) }
         super.onCleared()
+    }
+
+    fun updateOrderApproval(orderId: String, approved: Boolean) {
+        val db = FirebaseDatabase.getInstance().getReference("orders").child(orderId)
+        db.child("approved").setValue(approved)
     }
 }
 
-/** --- VIEW ORDERS SCREEN --- **/
+// ---------------------------
+// 🎨 Composable Screen
+// ---------------------------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ViewOrdersScreen(
     navController: NavController,
-    currentUserId: String,
+    adminId: String,
     viewModel: ViewOrdersViewModel = viewModel()
 ) {
     val isPreview = LocalInspectionMode.current
-
-    val orders by viewModel.orders
+    val allOrders by viewModel.allOrders
     val loading by viewModel.loading
     val error by viewModel.error
+    val coroutineScope = rememberCoroutineScope()
 
-    DisposableEffect(viewModel, isPreview, currentUserId) {
-        if (!isPreview) {
-            viewModel.startListeningForOrders(currentUserId)
-        }
+    var selectedTab by remember { mutableStateOf(0) }
+    val tabTitles = listOf("Pending", "Approved")
+
+    DisposableEffect(viewModel, isPreview, adminId) {
+        if (!isPreview) viewModel.startListeningForAdminOrders(adminId)
         onDispose { }
+    }
+
+    val orders = when (selectedTab) {
+        0 -> allOrders.filter { !it.approved } // pending
+        1 -> allOrders.filter { it.approved }  // approved
+        else -> emptyList()
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Incoming Orders", color = Color.White) },
+                title = { Text("Orders Management", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = tripleSeven, navigationIconContentColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = tripleSeven)
             )
-        }
+        },
+        containerColor = Color.White
     ) { paddingValues ->
-        ViewOrdersContent(
-            paddingValues = paddingValues,
-            loading = loading,
-            error = error,
-            orders = orders
-        )
-    }
-}
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            // 🔹 Tabs
+            TabRow(
+                selectedTabIndex = selectedTab,
+                containerColor = tripleSeven,
+                contentColor = Color.White
+            ) {
+                tabTitles.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index },
+                        text = {
+                            Text(
+                                text = title,
+                                color = if (selectedTab == index) Color.White else Color.LightGray,
+                                fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    )
+                }
+            }
 
-@Composable
-fun ViewOrdersContent(
-    paddingValues: PaddingValues,
-    loading: Boolean,
-    error: String?,
-    orders: List<Order>
-) {
-    Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-        when {
-            loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            error != null -> Text("Error: $error", color = Color.Red, modifier = Modifier.align(Alignment.Center))
-            orders.isEmpty() -> Text("You have no orders yet.", color = Color.Gray, modifier = Modifier.align(Alignment.Center))
-            else -> {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(16.dp),
+            when {
+                loading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+                    CircularProgressIndicator(color = tripleSeven)
+                }
+
+                error != null -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+                    Text(text = error ?: "Error loading orders", color = Color.Red)
+                }
+
+                orders.isEmpty() -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+                    Text("No ${tabTitles[selectedTab].lowercase()} orders found.", color = Color.Gray)
+                }
+
+                else -> LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFFF8FAFC)),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(16.dp)
                 ) {
-                    items(orders, key = { it.id }) { order ->
-                        OrderCard(order = order)
+                    items(orders) { order ->
+                        OrderCard(
+                            order = order,
+                            isApproved = selectedTab == 1,
+                            onApprove = {
+                                coroutineScope.launch {
+                                    viewModel.updateOrderApproval(order.orderId, true)
+                                }
+                            },
+                            onReject = {
+                                coroutineScope.launch {
+                                    viewModel.updateOrderApproval(order.orderId, false)
+                                }
+                            }
+                        )
                     }
                 }
             }
@@ -177,79 +213,67 @@ fun ViewOrdersContent(
     }
 }
 
+// ---------------------------
+// 💳 Order Card UI
+// ---------------------------
 @Composable
-fun OrderCard(order: Order) {
-    val formattedDate = remember(order.timestamp) {
-        val sdf = SimpleDateFormat("EEE, d MMM yyyy HH:mm", Locale.getDefault())
-        sdf.format(Date(order.timestamp))
-    }
-
+fun OrderCard(
+    order: Order,
+    isApproved: Boolean,
+    onApprove: () -> Unit,
+    onReject: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(20.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(order.productName ?: "Unnamed Product", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Spacer(Modifier.height(8.dp))
-            Text("Order from: ${order.buyerName}", fontSize = 14.sp, color = Color.Gray)
-            Text("Quantity: ${order.quantity}", fontSize = 14.sp, color = Color.Gray)
+            Text(order.productName, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = tripleSeven)
             Spacer(Modifier.height(4.dp))
-            Text("Ordered on: $formattedDate", fontSize = 12.sp, color = Color.LightGray)
+            Text("Buyer: ${order.buyerName}", fontSize = 15.sp, color = Color.DarkGray)
+            Text("Payment: ${order.paymentMethod}", fontSize = 15.sp, color = Color.Gray)
+            Spacer(Modifier.height(4.dp))
+            Text("Quantity: ${order.quantity}", fontSize = 15.sp)
+            Spacer(Modifier.height(10.dp))
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-            Button(
-                onClick = { /* TODO: Implement dispatch logic */ },
-                modifier = Modifier.align(Alignment.End),
-                colors = ButtonDefaults.buttonColors(containerColor = tripleSeven)
-            ) {
-                Text("Dispatch Order")
+            if (!isApproved) {
+                Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = onReject,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF7043)),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) { Text("Reject", color = Color.White) }
+
+                    Button(
+                        onClick = onApprove,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                    ) { Text("Approve", color = Color.White) }
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    Text(
+                        text = "✅ Approved",
+                        color = Color(0xFF4CAF50),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
 }
 
+// ---------------------------
+// 🧪 Preview
+// ---------------------------
 @Preview(showBackground = true)
 @Composable
-fun PreviewViewOrdersScreen() {
-    // Passing fake data for preview
-    val sampleOrders = listOf(
-        Order(
-            id = "1",
-            productId = "prod1",
-            productName = "Paracetamol",
-            buyerType = "Customer",
-            buyerId = "user1",
-            buyerName = "John Doe",
-            sellerId = "seller1",
-            quantity = 2,
-            paymentMethod = "MPesa",
-            timestamp = System.currentTimeMillis(),
-            isApproved = true,
-            receipt = "Sample Receipt"
-        ),
-        Order(
-            id = "2",
-            productId = "prod2",
-            productName = "Amoxicillin",
-            buyerType = "Customer",
-            buyerId = "user2",
-            buyerName = "Jane Smith",
-            sellerId = "seller2",
-            quantity = 1,
-            paymentMethod = "Cash",
-            timestamp = System.currentTimeMillis(),
-            isApproved = true,
-            receipt = "Sample Receipt"
-        )
-    )
-
-    // Use ViewOrdersContent directly for previewing UI without Firebase
-    ViewOrdersContent(
-        paddingValues = PaddingValues(0.dp),
-        loading = false,
-        error = null,
-        orders = sampleOrders
-    )
+fun ViewOrdersPreview() {
+    ViewOrdersScreen(navController = rememberNavController(), adminId = "previewUser")
 }
