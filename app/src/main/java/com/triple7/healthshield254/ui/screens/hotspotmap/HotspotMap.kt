@@ -3,6 +3,7 @@ package com.triple7.healthshield254.ui.screens.hotspotmap
 import android.app.Application
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -19,6 +20,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -32,9 +34,10 @@ import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.database.*
 import com.google.maps.android.heatmaps.HeatmapTileProvider
-import com.triple7.healthshield254.ui.screens.home.HomeScreen
 import com.triple7.healthshield254.ui.theme.HealthShield254Theme
 import com.triple7.healthshield254.ui.theme.tripleSeven
+
+private const val TAG = "HotspotMap"
 
 // --- Data Model ---
 data class HotspotLocation(
@@ -54,17 +57,20 @@ val previewHotspots = listOf(
     HotspotLocation("Malindi", -3.2199, 40.1164)
 )
 
-// --- Firebase Seeder ---
+// --- Firebase Seeder (unchanged) ---
 fun seedHotspotDataToFirebase() {
     val dbRef = FirebaseDatabase.getInstance().getReference("hotspots")
     previewHotspots.forEach { dbRef.child(it.name).setValue(it) }
 }
 
-// --- Application class ---
 class MyApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        seedHotspotDataToFirebase()
+        try {
+            seedHotspotDataToFirebase()
+        } catch (e: Exception) {
+            Log.w(TAG, "Firebase seeder failed: ${e.message}")
+        }
     }
 }
 
@@ -78,23 +84,56 @@ fun HotspotMapScreen(navController: NavController) {
     var hotspots by remember { mutableStateOf<List<LatLng>>(emptyList()) }
     var locationCards by remember { mutableStateOf<List<HotspotLocation>>(emptyList()) }
 
+    // Keep reference to listener so we can remove it
+    val firebaseListenerRef = remember { mutableStateOf<Pair<DatabaseReference, ValueEventListener>?>(null) }
+
     // --- Firebase Real-Time Updates with auto-refresh ---
-    LaunchedEffect(Unit) {
+    LaunchedEffect(inPreview) {
         if (!inPreview) {
-            val dbRef = FirebaseDatabase.getInstance().getReference("hotspots")
-            dbRef.addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val locations = snapshot.children.mapNotNull {
-                        it.getValue(HotspotLocation::class.java)
+            try {
+                val dbRef = FirebaseDatabase.getInstance().getReference("hotspots")
+                val listener = object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        try {
+                            val locations = snapshot.children.mapNotNull {
+                                it.getValue(HotspotLocation::class.java)
+                            }
+                            locationCards = locations
+                            hotspots = locations.map { LatLng(it.lat, it.lng) }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed parsing hotspots: ${e.message}")
+                        }
                     }
-                    locationCards = locations
-                    hotspots = locations.map { LatLng(it.lat, it.lng) }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.w(TAG, "Hotspots DB cancelled: ${error.message}")
+                    }
                 }
-                override fun onCancelled(error: DatabaseError) {}
-            })
+                dbRef.addValueEventListener(listener)
+                firebaseListenerRef.value = Pair(dbRef, listener)
+            } catch (e: Exception) {
+                Log.e(TAG, "Firebase listener failed: ${e.message}")
+                // fallback to preview data if Firebase not accessible
+                locationCards = previewHotspots
+                hotspots = previewHotspots.map { LatLng(it.lat, it.lng) }
+            }
         } else {
             locationCards = previewHotspots
             hotspots = previewHotspots.map { LatLng(it.lat, it.lng) }
+        }
+    }
+
+    // Remove listener when composable leaves composition
+    DisposableEffect(Unit) {
+        onDispose {
+            try {
+                firebaseListenerRef.value?.let { (ref, listener) ->
+                    ref.removeEventListener(listener)
+                    firebaseListenerRef.value = null
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to remove firebase listener: ${e.message}")
+            }
         }
     }
 
@@ -146,53 +185,102 @@ fun HotspotMapScreen(navController: NavController) {
 
 @Composable
 fun HeatmapGoogleMap(context: Context, points: List<LatLng>) {
+    val lifecycleOwner = LocalLifecycleOwner.current
     val mapView = remember { MapView(context) }
-    val lifecycleOwner = LocalContext.current as? androidx.lifecycle.LifecycleOwner
+    val safePoints by rememberUpdatedState(points) // ensure update block reads latest points
 
-    DisposableEffect(lifecycleOwner) {
-        val lifecycleObserver = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_CREATE -> mapView.onCreate(Bundle())
-                Lifecycle.Event.ON_START -> mapView.onStart()
-                Lifecycle.Event.ON_RESUME -> mapView.onResume()
-                Lifecycle.Event.ON_PAUSE -> mapView.onPause()
-                Lifecycle.Event.ON_STOP -> mapView.onStop()
-                Lifecycle.Event.ON_DESTROY -> mapView.onDestroy()
-                else -> {}
+    // Hook lifecycle safely; guard lifecycleOwner null
+    DisposableEffect(key1 = lifecycleOwner, key2 = mapView) {
+        val observer = LifecycleEventObserver { _, event ->
+            try {
+                when (event) {
+                    Lifecycle.Event.ON_CREATE -> mapView.onCreate(Bundle())
+                    Lifecycle.Event.ON_START -> mapView.onStart()
+                    Lifecycle.Event.ON_RESUME -> mapView.onResume()
+                    Lifecycle.Event.ON_PAUSE -> mapView.onPause()
+                    Lifecycle.Event.ON_STOP -> mapView.onStop()
+                    Lifecycle.Event.ON_DESTROY -> mapView.onDestroy()
+                    else -> { /* no-op */ }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "MapView lifecycle call failed on $event : ${e.message}")
             }
         }
-        lifecycleOwner?.lifecycle?.addObserver(lifecycleObserver)
-        onDispose { lifecycleOwner?.lifecycle?.removeObserver(lifecycleObserver) }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            try {
+                lifecycleOwner.lifecycle.removeObserver(observer)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to remove lifecycle observer: ${e.message}")
+            }
+            try {
+                mapView.onDestroy()
+            } catch (e: Exception) {
+                Log.w(TAG, "mapView.onDestroy() threw: ${e.message}")
+            }
+        }
     }
 
     AndroidView(factory = {
         mapView.apply {
-            getMapAsync { map ->
-                map.uiSettings.isZoomControlsEnabled = true
-                map.isBuildingsEnabled = true
-                map.isTrafficEnabled = true
-                map.isIndoorEnabled = true
-                map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(-1.286389, 36.817223), 6f))
+            try {
+                getMapAsync { map ->
+                    try {
+                        map.uiSettings.isZoomControlsEnabled = true
+                        map.isBuildingsEnabled = true
+                        map.isTrafficEnabled = true
+                        map.isIndoorEnabled = true
+                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(-1.286389, 36.817223), 6f))
 
-                if (points.isNotEmpty()) {
-                    val provider = HeatmapTileProvider.Builder()
-                        .data(points)
-                        .radius(50)
-                        .build()
-                    map.addTileOverlay(com.google.android.gms.maps.model.TileOverlayOptions().tileProvider(provider))
+                        if (safePoints.isNotEmpty()) {
+                            val provider = try {
+                                HeatmapTileProvider.Builder()
+                                    .data(safePoints)
+                                    .radius(50)
+                                    .build()
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Failed to build HeatmapTileProvider: ${e.message}")
+                                null
+                            }
+                            provider?.let {
+                                map.addTileOverlay(com.google.android.gms.maps.model.TileOverlayOptions().tileProvider(it))
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error configuring map: ${e.message}")
+                    }
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "getMapAsync failed: ${e.message}")
             }
         }
-    }, update = {
-        it.getMapAsync { map ->
-            map.clear()
-            if (points.isNotEmpty()) {
-                val provider = HeatmapTileProvider.Builder()
-                    .data(points)
-                    .radius(50)
-                    .build()
-                map.addTileOverlay(com.google.android.gms.maps.model.TileOverlayOptions().tileProvider(provider))
+    }, update = { view ->
+        try {
+            view.getMapAsync { map ->
+                try {
+                    map.clear()
+                    if (safePoints.isNotEmpty()) {
+                        val provider = try {
+                            HeatmapTileProvider.Builder()
+                                .data(safePoints)
+                                .radius(50)
+                                .build()
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to build HeatmapTileProvider (update): ${e.message}")
+                            null
+                        }
+                        provider?.let {
+                            map.addTileOverlay(com.google.android.gms.maps.model.TileOverlayOptions().tileProvider(it))
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error updating map: ${e.message}")
+                }
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "update getMapAsync failed: ${e.message}")
         }
     })
 }
