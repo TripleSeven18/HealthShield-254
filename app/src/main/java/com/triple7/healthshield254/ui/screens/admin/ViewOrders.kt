@@ -25,13 +25,13 @@ import com.google.firebase.database.*
 import com.triple7.healthshield254.ui.theme.tripleSeven
 import kotlinx.coroutines.launch
 
-// ---------------------------
-// 🧩 Data Model (matches Firebase exactly)
+//  Data Model (matches Firebase exactly)
 // ---------------------------
 data class Order(
     val id: String = "",
     val buyerId: String = "",
     val buyerName: String = "",
+    val buyerPhone: String = "",
     val buyerType: String = "",
     val paymentMethod: String = "",
     val productId: String = "",
@@ -41,7 +41,8 @@ data class Order(
     val timestamp: Long = 0L,
     val approved: Boolean = false,
     val receipt: String = ""
-) {
+)
+ {
     val orderId: String get() = id
 }
 
@@ -213,9 +214,6 @@ fun ViewOrdersScreen(
     }
 }
 
-// ---------------------------
-// 💳 Order Card UI
-// ---------------------------
 @Composable
 fun OrderCard(
     order: Order,
@@ -230,16 +228,42 @@ fun OrderCard(
         shape = RoundedCornerShape(20.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(order.productName, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = tripleSeven)
-            Spacer(Modifier.height(4.dp))
-            Text("Buyer: ${order.buyerName}", fontSize = 15.sp, color = Color.DarkGray)
+            Text(
+                order.productName,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = tripleSeven
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "Buyer: ${order.buyerName}",
+                fontSize = 15.sp,
+                color = Color.DarkGray
+            )
+
+            if (order.buyerPhone.isNotEmpty()) {
+                Text(
+                    text = "Contact: ${order.buyerPhone}",
+                    fontSize = 15.sp,
+                    color = Color(0xFF0277BD), // bluish highlight for clarity
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
+
             Text("Payment: ${order.paymentMethod}", fontSize = 15.sp, color = Color.Gray)
             Spacer(Modifier.height(4.dp))
             Text("Quantity: ${order.quantity}", fontSize = 15.sp)
+
             Spacer(Modifier.height(10.dp))
 
             if (!isApproved) {
-                Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Button(
                         onClick = onReject,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF7043)),
