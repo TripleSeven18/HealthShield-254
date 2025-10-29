@@ -7,7 +7,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.triple7.healthshield254.ui.screens.TradeCenter.AnalyticsScreen
-import com.triple7.healthshield254.ui.screens.TradeCenter.SellerDashboardScreen
 import com.triple7.healthshield254.ui.screens.TradeCenter.SupplierManufacturerDashboard
 import com.triple7.healthshield254.ui.screens.admin.AdminScreen
 import com.triple7.healthshield254.ui.screens.admin.UploadProductScreen
@@ -27,9 +26,6 @@ import com.triple7.healthshield254.ui.screens.reportmedicine.ScanMedicine
 import com.triple7.healthshield254.ui.screens.reportmedicine.ViewReport
 import com.triple7.healthshield254.ui.screens.splash.SplashScreen
 import com.triple7.healthshield254.ui.screens.TradeCenter.PlaceOrderScreen
-import com.triple7.healthshield254.ui.screens.verificationrecords.ScanHistoryScreen
-import com.triple7.healthshield254.ui.screens.verify.ScanVerifyScreen
-
 @Composable
 fun AppNavHost(
     modifier: Modifier = Modifier,
@@ -62,14 +58,6 @@ fun AppNavHost(
         }
 
 
-        composable(ROUT_SCANVERIFY) {
-            ScanVerifyScreen(navController)
-        }
-
-        composable(ROUT_REPORTMEDICINE) {
-            ScanVerifyScreen(navController)
-        }
-
         composable(ROUT_ADMIN) {
             AdminScreen(navController)
         }
@@ -85,10 +73,6 @@ fun AppNavHost(
 
         composable(ROUT_PROFILESETTINS) {
             ProfileSettingsScreen(navController)
-        }
-
-        composable(ROUT_VERIFICATIONRECORDS) {
-            ScanHistoryScreen(navController)
         }
 
         composable(ROUT_REGISTER) {
@@ -144,9 +128,6 @@ fun AppNavHost(
         }
         composable(ROUT_VIEW_MEDICINES) {
             MedicinesScreen(navController)
-        }
-        composable(ROUTE_SELLERDASHBOARD) {
-            SellerDashboardScreen(navController,"Pharmacist", "previewUser")
         }
 
 

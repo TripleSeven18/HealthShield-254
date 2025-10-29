@@ -2,11 +2,8 @@ package com.triple7.healthshield254.navigation
 
 const val ROUT_HOME = "home"
 const val ROUT_SPLASH = "splash"
-const val ROUT_SCANVERIFY = "ScanVerifyScreen"
-const val ROUT_REPORTMEDICINE= "ReportMedicineScreen"
 const val ROUT_HOTSPOTMAP= "HotspotMapScreen"
 const val ROUT_PROFILESETTINS= "ProfileSettingsScreen"
-const val ROUT_VERIFICATIONRECORDS= "ScanHistoryScreen"
 const val ROUT_REGISTER= "RegistrationScreen"
 const val ROUT_LOGIN= "LoginScreen"
 const val ROUT_SENDREPORT= "ReportScreen"
@@ -22,16 +19,9 @@ const val ROUT_ANALYTICSSCREEN= "AnalyticsScreen"
 const val ROUT_SCANMEDICINE= "ScanMedicine"
 const val ROUT_VIEWORDERS= "ViewOrders"
 const val ROUT_EDITPROFILE= "EditProfile"
-const val ROUTE_SELLERDASHBOARD= "SellerDashboardScreen"
-
 
 //Medicine
 // Medicines
 const val ROUT_ADD_MEDICINE = "uploadMedicine"
 const val ROUT_VIEW_MEDICINES = "viewMedicines"
-const val ROUT_UPDATE_MEDICINE = "update_medicine/{medicineId}"
-
 // End
-
-
-//E nd
