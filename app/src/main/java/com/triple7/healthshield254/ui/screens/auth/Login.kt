@@ -4,7 +4,6 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -34,9 +33,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.triple7.healthshield254.R
 import com.triple7.healthshield254.data.AuthViewModel
-import com.triple7.healthshield254.navigation.ROUT_HOME
 import com.triple7.healthshield254.navigation.ROUT_REGISTER
 import com.triple7.healthshield254.ui.theme.tripleSeven
+
 @Composable
 fun LoginScreen(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
@@ -47,142 +46,147 @@ fun LoginScreen(navController: NavHostController) {
     val isInPreview = LocalInspectionMode.current
     val authViewModel = if (!isInPreview) AuthViewModel(navController, context) else null
 
-    // Animated background gradient
     val gradientBrush = Brush.verticalGradient(
         listOf(tripleSeven.copy(alpha = 0.9f), Color.White)
     )
 
-    // 🔹 Wrap Card inside a Box to position it at the bottom
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(gradientBrush),
         contentAlignment = Alignment.BottomCenter
     ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 0.dp, vertical = 12.dp),
-            shape = CutCornerShape(topStart = 20.dp, bottomEnd = 8.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Bottom
         ) {
-            Column(
+            // 🔹 Image above the card
+            Image(
+                painter = painterResource(id = R.drawable.medicalinsurance),
+                contentDescription = "HealthShield Logo",
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                    .size(140.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .padding(bottom = 20.dp)
+            )
+
+            // 🔹 Smaller card dropped down toward bottom
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .heightIn(min = 400.dp)
+                    .padding(bottom = 40.dp),
+                shape = CutCornerShape(topStart = 20.dp, bottomEnd = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
-                // App Image
-                Image(
-                    painter = painterResource(id = R.drawable.medicalinsurance),
-                    contentDescription = "HealthShield Logo",
-                    modifier = Modifier
-                        .size(160.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "HealthShield",
-                    fontSize = 36.sp,
-                    fontFamily = FontFamily.Cursive,
-                    fontWeight = FontWeight.Bold,
-                    color = tripleSeven
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(text = "Welcome back!", color = Color.Gray, fontSize = 16.sp)
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                var emailFocused by remember { mutableStateOf(false) }
-                var passwordFocused by remember { mutableStateOf(false) }
-
-                val emailBorderColor by animateColorAsState(
-                    targetValue = if (emailFocused) tripleSeven else Color.Gray,
-                    label = "emailBorder"
-                )
-
-                val passwordBorderColor by animateColorAsState(
-                    targetValue = if (passwordFocused) tripleSeven else Color.Gray,
-                    label = "passwordBorder"
-                )
-
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .onFocusChanged { emailFocused = it.isFocused },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = emailBorderColor,
-                        unfocusedBorderColor = Color.Gray,
-                        focusedLabelColor = tripleSeven
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Password") },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Password") },
-                    trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(
-                                painter = painterResource(
-                                    id = if (passwordVisible)
-                                        R.drawable.ic_eye_open
-                                    else
-                                        R.drawable.ic_eye_open
-                                ),
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                                tint = tripleSeven
-                            )
-                        }
-                    },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onFocusChanged { passwordFocused = it.isFocused },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = passwordBorderColor,
-                        unfocusedBorderColor = Color.Gray,
-                        focusedLabelColor = tripleSeven
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Button(
-                    onClick = {
-                        if (!isInPreview) {
-                            authViewModel?.login(email, password)
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = tripleSeven),
-                    shape = RoundedCornerShape(25.dp)
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Text("Login", color = Color.White, fontSize = 18.sp)
-                }
+                    Text(
+                        text = "HealthShield",
+                        fontSize = 36.sp,
+                        fontFamily = FontFamily.Cursive,
+                        fontWeight = FontWeight.Bold,
+                        color = tripleSeven
+                    )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = "Welcome back!", color = Color.Gray, fontSize = 16.sp)
 
-                TextButton(onClick = {
-                    if (!isInPreview) navController.navigate(ROUT_REGISTER)
-                }) {
-                    Text("Don't have an account? Sign up", color = tripleSeven)
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    var emailFocused by remember { mutableStateOf(false) }
+                    var passwordFocused by remember { mutableStateOf(false) }
+
+                    val emailBorderColor by animateColorAsState(
+                        targetValue = if (emailFocused) tripleSeven else Color.Gray,
+                        label = "emailBorder"
+                    )
+
+                    val passwordBorderColor by animateColorAsState(
+                        targetValue = if (passwordFocused) tripleSeven else Color.Gray,
+                        label = "passwordBorder"
+                    )
+
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
+                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onFocusChanged { emailFocused = it.isFocused },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = emailBorderColor,
+                            unfocusedBorderColor = Color.Gray,
+                            focusedLabelColor = tripleSeven
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password") },
+                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Password") },
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (passwordVisible)
+                                            R.drawable.ic_eye_open
+                                        else
+                                            R.drawable.ic_eye_open
+                                    ),
+                                    contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                                    tint = tripleSeven
+                                )
+                            }
+                        },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onFocusChanged { passwordFocused = it.isFocused },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = passwordBorderColor,
+                            unfocusedBorderColor = Color.Gray,
+                            focusedLabelColor = tripleSeven
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Button(
+                        onClick = {
+                            if (!isInPreview) {
+                                authViewModel?.login(email, password)
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = tripleSeven),
+                        shape = RoundedCornerShape(25.dp)
+                    ) {
+                        Text("Login", color = Color.White, fontSize = 18.sp)
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    TextButton(onClick = {
+                        if (!isInPreview) navController.navigate(ROUT_REGISTER)
+                    }) {
+                        Text("Don't have an account? Sign up", color = tripleSeven)
+                    }
                 }
             }
         }

@@ -34,7 +34,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.triple7.healthshield254.R
 import com.triple7.healthshield254.data.AuthViewModel
-import com.triple7.healthshield254.navigation.ROUT_HOME
 import com.triple7.healthshield254.navigation.ROUT_LOGIN
 import com.triple7.healthshield254.ui.theme.tripleSeven
 
@@ -55,186 +54,195 @@ fun RegistrationScreen(navController: NavHostController) {
         listOf(tripleSeven.copy(alpha = 0.9f), Color.White)
     )
 
-    // 🔹 Wrap the Card in a Box to keep it anchored at the bottom
+    // 🔹 Updated layout: image above, smaller card near bottom
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(gradientBrush),
-        contentAlignment = Alignment.BottomCenter
+            .background(gradientBrush)
     ) {
-        Card(
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Bottom,
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 0.dp, vertical = 12.dp),
-            shape = CutCornerShape(topStart = 20.dp, bottomEnd = 8.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                .fillMaxSize()
+                .padding(bottom = 20.dp)
         ) {
-            Column(
+            // App Image ABOVE the Card
+            Image(
+                painter = painterResource(id = R.drawable.medicalinsurance),
+                contentDescription = "HealthShield Logo",
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                    .size(140.dp)
+                    .clip(RoundedCornerShape(20.dp))
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Smaller Card positioned lower
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(0.88f)
+                    .wrapContentHeight()
+                    .padding(vertical = 8.dp),
+                shape = CutCornerShape(topStart = 20.dp, bottomEnd = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
-                // App Image
-                Image(
-                    painter = painterResource(id = R.drawable.medicalinsurance),
-                    contentDescription = "HealthShield Logo",
-                    modifier = Modifier
-                        .size(160.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "Create Account",
-                    fontSize = 32.sp,
-                    fontFamily = FontFamily.Cursive,
-                    fontWeight = FontWeight.Bold,
-                    color = tripleSeven
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Focus animations
-                var nameFocused by remember { mutableStateOf(false) }
-                var emailFocused by remember { mutableStateOf(false) }
-                var passwordFocused by remember { mutableStateOf(false) }
-                var confirmPasswordFocused by remember { mutableStateOf(false) }
-
-                val nameBorderColor by animateColorAsState(
-                    targetValue = if (nameFocused) tripleSeven else Color.Gray,
-                    label = "nameBorder"
-                )
-                val emailBorderColor by animateColorAsState(
-                    targetValue = if (emailFocused) tripleSeven else Color.Gray,
-                    label = "emailBorder"
-                )
-                val passwordBorderColor by animateColorAsState(
-                    targetValue = if (passwordFocused) tripleSeven else Color.Gray,
-                    label = "passwordBorder"
-                )
-                val confirmPasswordBorderColor by animateColorAsState(
-                    targetValue = if (confirmPasswordFocused) tripleSeven else Color.Gray,
-                    label = "confirmPasswordBorder"
-                )
-
-                // Name Input
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Full Name") },
-                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Full Name") },
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .onFocusChanged { nameFocused = it.isFocused },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = nameBorderColor,
-                        unfocusedBorderColor = Color.Gray,
-                        focusedLabelColor = tripleSeven
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Email Input
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onFocusChanged { emailFocused = it.isFocused },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = emailBorderColor,
-                        unfocusedBorderColor = Color.Gray,
-                        focusedLabelColor = tripleSeven
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Password Input
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Password") },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Password") },
-                    trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(
-                                painter = painterResource(
-                                    id = if (passwordVisible)
-                                        R.drawable.ic_eye_open
-                                    else
-                                        R.drawable.ic_eye_open
-                                ),
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                                tint = tripleSeven
-                            )
-                        }
-                    },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onFocusChanged { passwordFocused = it.isFocused },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = passwordBorderColor,
-                        unfocusedBorderColor = Color.Gray,
-                        focusedLabelColor = tripleSeven
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Confirm Password Input
-                OutlinedTextField(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
-                    label = { Text("Confirm Password") },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Confirm Password") },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onFocusChanged { confirmPasswordFocused = it.isFocused },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = confirmPasswordBorderColor,
-                        unfocusedBorderColor = Color.Gray,
-                        focusedLabelColor = tripleSeven
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Register Button
-                Button(
-                    onClick = {
-                        if (!isInPreview) {
-                            authViewModel?.signup(name, email, password, confirmPassword)
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = tripleSeven),
-                    shape = RoundedCornerShape(25.dp)
+                        .padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Text("Sign up", color = Color.White, fontSize = 18.sp)
-                }
+                    Text(
+                        text = "Create Account",
+                        fontSize = 28.sp,
+                        fontFamily = FontFamily.Cursive,
+                        fontWeight = FontWeight.Bold,
+                        color = tripleSeven
+                    )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                // Redirect to Login
-                TextButton(onClick = {
-                    if (!isInPreview) navController.navigate(ROUT_LOGIN)
-                }) {
-                    Text("Already have an account? Login", color = tripleSeven)
+                    // Focus animations
+                    var nameFocused by remember { mutableStateOf(false) }
+                    var emailFocused by remember { mutableStateOf(false) }
+                    var passwordFocused by remember { mutableStateOf(false) }
+                    var confirmPasswordFocused by remember { mutableStateOf(false) }
+
+                    val nameBorderColor by animateColorAsState(
+                        targetValue = if (nameFocused) tripleSeven else Color.Gray,
+                        label = "nameBorder"
+                    )
+                    val emailBorderColor by animateColorAsState(
+                        targetValue = if (emailFocused) tripleSeven else Color.Gray,
+                        label = "emailBorder"
+                    )
+                    val passwordBorderColor by animateColorAsState(
+                        targetValue = if (passwordFocused) tripleSeven else Color.Gray,
+                        label = "passwordBorder"
+                    )
+                    val confirmPasswordBorderColor by animateColorAsState(
+                        targetValue = if (confirmPasswordFocused) tripleSeven else Color.Gray,
+                        label = "confirmPasswordBorder"
+                    )
+
+                    // Name Input
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Full Name") },
+                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Full Name") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onFocusChanged { nameFocused = it.isFocused },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = nameBorderColor,
+                            unfocusedBorderColor = Color.Gray,
+                            focusedLabelColor = tripleSeven
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Email Input
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
+                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onFocusChanged { emailFocused = it.isFocused },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = emailBorderColor,
+                            unfocusedBorderColor = Color.Gray,
+                            focusedLabelColor = tripleSeven
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Password Input
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password") },
+                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Password") },
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (passwordVisible)
+                                            R.drawable.ic_eye_open
+                                        else
+                                            R.drawable.ic_eye_open
+                                    ),
+                                    contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                                    tint = tripleSeven
+                                )
+                            }
+                        },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onFocusChanged { passwordFocused = it.isFocused },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = passwordBorderColor,
+                            unfocusedBorderColor = Color.Gray,
+                            focusedLabelColor = tripleSeven
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Confirm Password Input
+                    OutlinedTextField(
+                        value = confirmPassword,
+                        onValueChange = { confirmPassword = it },
+                        label = { Text("Confirm Password") },
+                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Confirm Password") },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onFocusChanged { confirmPasswordFocused = it.isFocused },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = confirmPasswordBorderColor,
+                            unfocusedBorderColor = Color.Gray,
+                            focusedLabelColor = tripleSeven
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Register Button
+                    Button(
+                        onClick = {
+                            if (!isInPreview) {
+                                authViewModel?.signup(name, email, password, confirmPassword)
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(45.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = tripleSeven),
+                        shape = RoundedCornerShape(25.dp)
+                    ) {
+                        Text("Sign up", color = Color.White, fontSize = 16.sp)
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Redirect to Login
+                    TextButton(onClick = {
+                        if (!isInPreview) navController.navigate(ROUT_LOGIN)
+                    }) {
+                        Text("Already have an account? Login", color = tripleSeven)
+                    }
                 }
             }
         }
