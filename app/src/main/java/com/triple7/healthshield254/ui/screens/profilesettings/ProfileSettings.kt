@@ -38,7 +38,11 @@ import com.triple7.healthshield254.ui.theme.tripleSeven
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileSettingsScreen(navController: NavController) {
+fun ProfileSettingsScreen(
+    navController: NavController,
+    isDarkMode: Boolean,
+    onDarkModeChange: (Boolean) -> Unit
+) {
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
     val currentUser = auth.currentUser
@@ -50,7 +54,6 @@ fun ProfileSettingsScreen(navController: NavController) {
 
     var language by remember { mutableStateOf("English") }
     var notificationsEnabled by remember { mutableStateOf(true) }
-    var isDarkMode by remember { mutableStateOf(AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES) }
 
     val gradientBrush = Brush.verticalGradient(colors = listOf(tripleSeven.copy(alpha = 0.1f), Color.Transparent))
 
@@ -85,11 +88,7 @@ fun ProfileSettingsScreen(navController: NavController) {
                     setLocale(context, code)
                 },
                 onNotificationsChange = { notificationsEnabled = it },
-                onDarkModeChange = { newMode ->
-                    isDarkMode = newMode
-                    val mode = if (newMode) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
-                    AppCompatDelegate.setDefaultNightMode(mode)
-                }
+                onDarkModeChange = onDarkModeChange
             )
 
             // --- Promo Card ---
@@ -168,7 +167,7 @@ fun SettingsSection(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             SettingItem(
-                icon = Icons.Default.Info,  //Language icon
+                icon = Icons.Default.Language,  //Language icon
                 title = "Language",
                 subtitle = language,
                 trailing = {
@@ -184,7 +183,7 @@ fun SettingsSection(
             )
             Divider()
             SettingToggle(
-                icon = Icons.Default.Info,  //DarkMode icon
+                icon = Icons.Default.DarkMode,  //DarkMode icon
                 title = "Dark Mode",
                 checked = isDarkMode,
                 onCheckedChange = onDarkModeChange
@@ -290,6 +289,6 @@ private fun Context.shareApp() {
 @Composable
 fun ProfileSettingsScreenPreview() {
     HealthShield254Theme {
-        ProfileSettingsScreen(rememberNavController())
+        ProfileSettingsScreen(rememberNavController(), isDarkMode = false, onDarkModeChange = {})
     }
 }

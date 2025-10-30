@@ -28,6 +28,8 @@ import com.triple7.healthshield254.ui.screens.splash.SplashScreen
 import com.triple7.healthshield254.ui.screens.TradeCenter.PlaceOrderScreen
 @Composable
 fun AppNavHost(
+    isDarkMode: Boolean,
+    onDarkModeChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     startDestination: String = ROUT_SPLASH
@@ -72,7 +74,7 @@ fun AppNavHost(
         }
 
         composable(ROUT_PROFILESETTINS) {
-            ProfileSettingsScreen(navController)
+            ProfileSettingsScreen(navController, isDarkMode, onDarkModeChange)
         }
 
         composable(ROUT_REGISTER) {
