@@ -1,12 +1,13 @@
 package com.triple7.healthshield254.ui.screens.home
+
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -36,12 +37,14 @@ import com.triple7.healthshield254.ui.theme.HealthShield254Theme
 import com.triple7.healthshield254.ui.theme.tripleSeven
 import kotlin.math.roundToInt
 
-
 @Composable
 fun HomeScreen(navController: NavController) {
     val user = FirebaseAuth.getInstance().currentUser
     val userName = remember(user) {
-        user?.displayName?.takeIf { it.isNotBlank() } ?: user?.email?.split('@')?.get(0)?.replaceFirstChar { it.uppercase() } ?: "User"
+        user?.displayName?.takeIf { it.isNotBlank() }
+            ?: user?.email?.split('@')?.get(0)
+                ?.replaceFirstChar { it.uppercase() }
+            ?: "User"
     }
 
     Scaffold(
@@ -67,7 +70,7 @@ fun HomeScreen(navController: NavController) {
                 .padding(16.dp)
         ) {
 
-            // --- Top Row: Greeting + Notification Icon ---
+            // --- Greeting Row ---
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -76,7 +79,8 @@ fun HomeScreen(navController: NavController) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    val currentHour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+                    val currentHour =
+                        java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
                     val greetingText = when (currentHour) {
                         in 0..11 -> "Good Morning"
                         in 12..16 -> "Good Afternoon"
@@ -95,9 +99,7 @@ fun HomeScreen(navController: NavController) {
                     )
                 }
 
-                IconButton(
-                    onClick = { /* navController.navigate(ROUT_NOTIFICATIONS) */ }
-                ) {
+                IconButton(onClick = { /* navController.navigate(ROUT_NOTIFICATIONS) */ }) {
                     Icon(
                         painter = painterResource(id = R.drawable.medicalinsurance),
                         contentDescription = "Notifications",
@@ -112,7 +114,7 @@ fun HomeScreen(navController: NavController) {
             // --- Scan Medicine Button ---
             GradientButton(
                 text = "Scan Medicine",
-                icon = Icons.Default.Info, // QrCodeScanner Icon
+                icon = Icons.Default.Info,
                 gradient = Brush.horizontalGradient(
                     listOf(tripleSeven, tripleSeven.copy(alpha = 0.7f))
                 )
@@ -122,8 +124,13 @@ fun HomeScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Your Profile Card ---
-            Text("Your Profile", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.DarkGray)
+            // --- Profile Section ---
+            Text(
+                "Your Profile",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = Color.DarkGray
+            )
             Spacer(modifier = Modifier.height(8.dp))
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -132,11 +139,13 @@ fun HomeScreen(navController: NavController) {
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.profile), // Generic profile icon
+                        painter = painterResource(id = R.drawable.profile),
                         contentDescription = "Profile Picture",
                         modifier = Modifier
                             .size(50.dp)
@@ -152,31 +161,30 @@ fun HomeScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Dashboard Cards ---
+            // --- Dashboard Cards in Two Scrollable Containers ---
             val impressiveColors = listOf(
-                Color(0xFF4A90E2), // Bright Blue
-                Color(0xFF50E3C2), // Aqua Green
-                Color(0xFFB8E986), // Pastel Green
-                Color(0xFFF5A623), // Orange
-                Color(0xFFF8E71C), // Yellow
-                Color(0xFF8B572A), // Brown
-                Color(0xFF7ED321), // Lime Green
-                Color(0xFF9013FE), // Purple
-                Color(0xFFBD10E0), // Magenta
-                Color(0xFF417505), // Dark Green
-                Color(0xFFD0021B)  // Red
+                Color(0xFF4A90E2),
+                Color(0xFF50E3C2),
+                Color(0xFFB8E986),
+                Color(0xFFF5A623),
+                Color(0xFFF8E71C),
+                Color(0xFF8B572A),
+                Color(0xFF7ED321),
+                Color(0xFF9013FE)
             )
 
             val dashboardItems = listOf(
                 Triple("HotspotMapScreen", R.drawable.hotspotmap, impressiveColors[0]),
-                Triple("Report counterfeit", R.drawable.reportcounterfeit, impressiveColors[2]),
-                Triple("Medicine", R.drawable.medicine, impressiveColors[3]),
-                Triple("Profile & Settings", R.drawable.profile, impressiveColors[4]),
-                Triple("Place Order", R.drawable.placeorder, impressiveColors[5]),
-                Triple("Supplier Manufacturer", R.drawable.supplier, impressiveColors[6]),
-                Triple("Analytics Screen", R.drawable.supplier, impressiveColors[7]),
-                Triple("ChatScreen", R.drawable.supplier, impressiveColors[8]),
+                Triple("Report counterfeit", R.drawable.reportcounterfeit, impressiveColors[1]),
+                Triple("Medicine", R.drawable.medicine, impressiveColors[2]),
+                Triple("Profile & Settings", R.drawable.profile, impressiveColors[3]),
+                Triple("Place Order", R.drawable.placeorder, impressiveColors[4]),
+                Triple("Supplier Manufacturer", R.drawable.supplier, impressiveColors[5]),
+                Triple("Analytics Screen", R.drawable.supplier, impressiveColors[6]),
+                Triple("ChatScreen", R.drawable.supplier, impressiveColors[7])
             )
+
+            val cardGroups = dashboardItems.chunked(4) // Two groups of 4 cards each
 
             LazyRow(
                 modifier = Modifier
@@ -184,29 +192,50 @@ fun HomeScreen(navController: NavController) {
                     .padding(top = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(items = dashboardItems.chunked(2)) { pair ->
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.width(280.dp)
+                items(cardGroups.size) { groupIndex ->
+                    val group = cardGroups[groupIndex]
+                    Card(
+                        modifier = Modifier
+                            .fillParentMaxWidth(0.9f)
+                            .wrapContentHeight() // ✅ Dynamic height
+                            .shadow(6.dp, RoundedCornerShape(20.dp)),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFEEEEEE)),
+                        elevation = CardDefaults.cardElevation(6.dp)
                     ) {
-                        pair.forEach { (title, icon, color) ->
-                            DashboardCard(
-                                title = title,
-                                iconRes = icon,
-                                color = color,
-                                onClick = {
-                                    when (title) {
-                                        "HotspotMapScreen" -> navController.navigate(ROUT_HOTSPOTMAP)
-                                        "Report counterfeit" -> navController.navigate(ROUT_SENDREPORT)
-                                        "Medicine" -> navController.navigate(ROUT_VIEW_MEDICINES)
-                                        "Place Order" -> navController.navigate(ROUT_PLACEORDER)
-                                        "Supplier Manufacturer" -> navController.navigate(ROUT_SUPPLIERMANUFACTURER)
-                                        "Analytics Screen" -> navController.navigate(ROUT_ANALYTICSSCREEN)
-                                        "ChatScreen" -> navController.navigate(ROUT_CHATBOARDSCREEN)
-                                        "Profile & Settings" -> navController.navigate(ROUT_PROFILESETTINS)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            // Two rows of two circular cards
+                            for (row in group.chunked(2)) {
+                                Row(
+                                    horizontalArrangement = Arrangement.SpaceEvenly,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    row.forEach { (title, icon, color) ->
+                                        DashboardCard(
+                                            title = title,
+                                            iconRes = icon,
+                                            color = color
+                                        ) {
+                                            when (title) {
+                                                "HotspotMapScreen" -> navController.navigate(ROUT_HOTSPOTMAP)
+                                                "Report counterfeit" -> navController.navigate(ROUT_SENDREPORT)
+                                                "Medicine" -> navController.navigate(ROUT_VIEW_MEDICINES)
+                                                "Profile & Settings" -> navController.navigate(ROUT_PROFILESETTINS)
+                                                "Place Order" -> navController.navigate(ROUT_PLACEORDER)
+                                                "Supplier Manufacturer" -> navController.navigate(ROUT_SUPPLIERMANUFACTURER)
+                                                "Analytics Screen" -> navController.navigate(ROUT_ANALYTICSSCREEN)
+                                                "ChatScreen" -> navController.navigate(ROUT_CHATBOARDSCREEN)
+                                            }
+                                        }
                                     }
                                 }
-                            )
+                            }
                         }
                     }
                 }
@@ -215,7 +244,7 @@ fun HomeScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(20.dp))
 
             // --- Notice Banner ---
-            MarqueeText("⚠ Important notice: Always check medicine authenticity before purchase!")
+            MarqueeText("Important notice: Always check medicine authenticity before purchase!")
         }
     }
 }
@@ -224,34 +253,32 @@ fun HomeScreen(navController: NavController) {
 fun DashboardCard(title: String, iconRes: Int, color: Color, onClick: () -> Unit) {
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(120.dp)
-            .padding(horizontal = 8.dp, vertical = 6.dp)
+            .size(110.dp)
             .clickable { onClick() }
-            .shadow(6.dp, RoundedCornerShape(20.dp)),
+            .shadow(6.dp, CircleShape),
         colors = CardDefaults.cardColors(containerColor = color),
-        shape = RoundedCornerShape(20.dp)
+        shape = CircleShape
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(start = 24.dp)
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            Icon(
-                painter = painterResource(id = iconRes),
-                contentDescription = title,
-                modifier = Modifier.size(42.dp),
-                tint = Color.White
-            )
-            Spacer(modifier = Modifier.width(24.dp))
-            Text(
-                text = title,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = title,
+                    modifier = Modifier.size(40.dp),
+                    tint = Color.White
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = title,
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 11.sp,
+                    lineHeight = 12.sp
+                )
+            }
         }
     }
 }
@@ -287,19 +314,32 @@ fun MarqueeText(text: String) {
         ),
         label = "translateX"
     )
-    Box(
+
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(30.dp)
-            .background(Color(0xFFFFC107)),
-        contentAlignment = Alignment.CenterStart
+            .height(40.dp)
+            .padding(horizontal = 8.dp)
+            .shadow(4.dp, RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFC107))
     ) {
-        Text(
-            text = text,
-            modifier = Modifier.offset { IntOffset(translateX.roundToInt(), 0) },
-            fontWeight = FontWeight.Bold,
-            color = Color.Black
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(16.dp)),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Text(
+                text = text,
+                modifier = Modifier
+                    .offset { IntOffset(translateX.roundToInt(), 0) }
+                    .padding(horizontal = 16.dp),
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                fontSize = 14.sp
+            )
+        }
     }
 }
 

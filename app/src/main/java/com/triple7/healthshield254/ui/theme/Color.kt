@@ -12,3 +12,4 @@ val tripleSeven = Color(0xFFF0A16E) // Formerly Orange80, a warmer color
 val tripleseven = Color(0xFFF0A16E) // Formerly Orange80, a warmer color
 val triple777 = Color(0xFFF0A16E) // Formerly Orange80, a warmer color
 val Orange80 = Color(0xFFF0A16E) // Formerly Orange80, a warmer color
+val NewBlue = Color(0xFF0091D4) // Formerly Orange80, a warmer color

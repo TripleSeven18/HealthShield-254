@@ -4,22 +4,20 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -28,33 +26,28 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.airbnb.lottie.compose.LottieAnimation
-import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.LottieConstants
-import com.airbnb.lottie.compose.animateLottieCompositionAsState
-import com.airbnb.lottie.compose.rememberLottieComposition
+import com.airbnb.lottie.compose.*
 import com.triple7.healthshield254.R
-import com.triple7.healthshield254.navigation.ROUT_ONBOARDING2
 import com.triple7.healthshield254.navigation.ROUT_REGISTER
+import com.triple7.healthshield254.ui.theme.NewBlue
 import com.triple7.healthshield254.ui.theme.tripleSeven
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun Onboarding1(navController: NavController) {
-    val pagerState = rememberPagerState(pageCount = { 3 })
     val scrollState = rememberScrollState()
 
     Scaffold { paddingValues ->
 
         Box(modifier = Modifier.fillMaxSize()) {
 
-            //Icon at top right
+            // Top-right Icon
             Image(
-                painter = painterResource(id = R.drawable.medicalinsurance), // Replace with your drawable
+                painter = painterResource(id = R.drawable.medicalinsurance),
                 contentDescription = "Top Right Icon",
                 modifier = Modifier
-                    .size(60.dp)
+                    .size(50.dp)
                     .align(Alignment.TopEnd)
                     .padding(16.dp)
             )
@@ -63,12 +56,14 @@ fun Onboarding1(navController: NavController) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
+                    .background(color = tripleSeven)
                     .verticalScroll(scrollState),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
 
                 Spacer(modifier = Modifier.height(40.dp))
+
                 // Lottie Animation
                 val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.medicarepositivity))
                 val progress by animateLottieCompositionAsState(
@@ -97,33 +92,15 @@ fun Onboarding1(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // --- Carousel Cards ---
-                CarouselTextCardsTripleSeven()
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Pager Dots
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    repeat(3) { index ->
-                        val color = if (pagerState.currentPage == index) tripleSeven else Color.LightGray
-                        Box(
-                            modifier = Modifier
-                                .padding(4.dp)
-                                .size(12.dp)
-                                .background(color, shape = CircleShape)
-                        )
-                    }
-                }
+                // --- Responsive Horizontal Scrollable Cards Section ---
+                StaticSquareCardsInsideBigCard()
 
                 Spacer(modifier = Modifier.height(40.dp))
 
                 // Get Started Button
                 Button(
                     onClick = { navController.navigate(ROUT_REGISTER) },
-                    colors = ButtonDefaults.buttonColors(containerColor = tripleSeven),
+                    colors = ButtonDefaults.buttonColors(containerColor = NewBlue),
                     shape = CircleShape,
                     modifier = Modifier
                         .height(55.dp)
@@ -144,51 +121,69 @@ fun Onboarding1(navController: NavController) {
 }
 
 @Composable
-fun CarouselTextCardsTripleSeven() {
+fun StaticSquareCardsInsideBigCard() {
     val texts = listOf(
         "Digital Shield Against Counterfeit Medicines.",
         "Scan, Verify, and Protect Your Health With Us",
         "AI-Powered Authenticity Checks."
     )
 
-    var currentIndex by remember { mutableStateOf(0) }
+    val cardColors = listOf(
+        Color(0xFFFF6A00), // Orange
+        Color(0xFF4A90E2), // Blue
+        Color(0xFF50E3C2)  // Teal
+    )
 
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(3000)
-            currentIndex = (currentIndex + 1) % texts.size
-        }
-    }
+    // Get screen width
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
 
-    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        LazyRow(
+    // Responsive card width: ~30% of screen width, min 100.dp, max 150.dp
+    val cardWidth = (screenWidth * 0.3f).coerceIn(100.dp, 150.dp)
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth(0.9f)
+            .wrapContentHeight(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(24.dp)
+                .padding(16.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            items(texts.size) { index ->
-                val text = texts[index]
-                Card(
-                    modifier = Modifier
-                        .width(340.dp)
-                        .height(180.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFF6A00)) // Triple Seven
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(horizontal = 8.dp)
+            ) {
+                items(texts.size) { index ->
+                    Card(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color(0xFFFF6A00))
-                            .padding(20.dp)
+                            .width(cardWidth)
+                            .aspectRatio(1f), // Keep square shape
+                        shape = RoundedCornerShape(8.dp),
+                        colors = CardDefaults.cardColors(containerColor = cardColors[index])
                     ) {
-                        Text(
-                            text = text,
-                            fontSize = 22.sp,
-                            textAlign = TextAlign.Center,
-                            color = Color.White
-                        )
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(12.dp)
+                        ) {
+                            Text(
+                                text = texts[index],
+                                fontSize = 14.sp,
+                                textAlign = TextAlign.Center,
+                                color = Color.White,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 }
             }
