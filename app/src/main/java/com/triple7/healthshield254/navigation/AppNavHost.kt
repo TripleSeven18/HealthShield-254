@@ -26,6 +26,8 @@ import com.triple7.healthshield254.ui.screens.reportmedicine.ScanMedicine
 import com.triple7.healthshield254.ui.screens.reportmedicine.ViewReport
 import com.triple7.healthshield254.ui.screens.splash.SplashScreen
 import com.triple7.healthshield254.ui.screens.TradeCenter.PlaceOrderScreen
+import com.triple7.healthshield254.ui.screens.bot.BotEnquiryScreen
+
 @Composable
 fun AppNavHost(
     isDarkMode: Boolean,
@@ -112,12 +114,13 @@ fun AppNavHost(
             ScanMedicine(navController)
         }
         composable(ROUT_VIEWORDERS) {
-            ViewOrdersScreen(navController = rememberNavController(), adminId = "previewUser")
+            ViewOrdersScreen(navController = navController, adminId = "previewUser")
         }
 
         // --- Place Order Screen ---
         composable(ROUT_PLACEORDER) {
             PlaceOrderScreen(
+                navController = navController,
                 currentUserType = currentUserType,
                 currentUserId = currentUserId
             )
@@ -132,11 +135,9 @@ fun AppNavHost(
             MedicinesScreen(navController)
         }
 
-
-
-
-
-
+        composable(ROUT_BOT_ENQUIRY) {
+            BotEnquiryScreen(navController)
+        }
 
     }
 }

@@ -19,6 +19,8 @@ const val ROUT_ANALYTICSSCREEN= "AnalyticsScreen"
 const val ROUT_SCANMEDICINE= "ScanMedicine"
 const val ROUT_VIEWORDERS= "ViewOrders"
 const val ROUT_EDITPROFILE= "EditProfile"
+const val ROUT_CONSULTATION= "consultation"
+const val ROUT_BOT_ENQUIRY = "bot_enquiry"
 
 //Medicine
 // Medicines

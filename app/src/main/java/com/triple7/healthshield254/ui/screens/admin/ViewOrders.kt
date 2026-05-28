@@ -26,7 +26,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
-import com.triple7.healthshield254.ui.theme.tripleSeven
 import kotlinx.coroutines.launch
 
 // ---------------------------
@@ -128,29 +127,28 @@ fun ViewOrdersScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Orders Management", color = Color.White) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = tripleSeven)
+                title = { Text("Orders Management", color = MaterialTheme.colorScheme.onPrimary) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
             )
         },
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color(0xFFF8FAFC))
         ) {
             when {
                 loading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    CircularProgressIndicator(color = tripleSeven)
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
 
                 error != null -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    Text(text = error ?: "Error loading orders", color = Color.Red)
+                    Text(text = error ?: "Error loading orders", color = MaterialTheme.colorScheme.error)
                 }
 
                 allOrders.isEmpty() -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    Text("No orders found.", color = Color.Gray)
+                    Text("No orders found.", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
                 }
 
                 else -> LazyColumn(
@@ -194,7 +192,7 @@ fun OrderCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(20.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -207,14 +205,14 @@ fun OrderCard(
                     text = order.productName,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = tripleSeven
+                    color = MaterialTheme.colorScheme.primary
                 )
 
                 // ✅ Status badge
                 Box(
                     modifier = Modifier
                         .background(
-                            color = if (order.approved) Color(0xFF4CAF50) else Color(0xFFFFC107),
+                            color = if (order.approved) Color(0xFF4CAF50) else MaterialTheme.colorScheme.tertiary,
                             shape = RoundedCornerShape(8.dp)
                         )
                         .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -229,19 +227,31 @@ fun OrderCard(
             }
 
             Spacer(modifier = Modifier.height(6.dp))
-            Text("Buyer: ${order.buyerName}", fontSize = 15.sp, color = Color.DarkGray)
+            Text(
+                "Buyer: ${order.buyerName}", 
+                fontSize = 15.sp, 
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+            )
 
             if (order.buyerPhone.isNotEmpty()) {
                 Text(
                     text = "Contact: ${order.buyerPhone}",
                     fontSize = 15.sp,
-                    color = Color(0xFF0277BD),
+                    color = MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.Medium
                 )
             }
 
-            Text("Payment: ${order.paymentMethod}", fontSize = 15.sp, color = Color.Gray)
-            Text("Quantity: ${order.quantity}", fontSize = 15.sp)
+            Text(
+                "Payment: ${order.paymentMethod}", 
+                fontSize = 15.sp, 
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+            Text(
+                "Quantity: ${order.quantity}", 
+                fontSize = 15.sp,
+                color = MaterialTheme.colorScheme.onSurface
+            )
 
             Spacer(Modifier.height(10.dp))
 
@@ -251,7 +261,8 @@ fun OrderCard(
                         .fillMaxWidth()
                         .clickable { expanded = !expanded }
                         .background(
-                            if (expanded) Color(0xFFE3F2FD) else Color(0xFFF1F1F1),
+                            if (expanded) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) 
+                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                             shape = RoundedCornerShape(8.dp)
                         )
                         .padding(10.dp),
@@ -260,13 +271,13 @@ fun OrderCard(
                     Icon(
                         imageVector = Icons.Default.ReceiptLong,
                         contentDescription = "Receipt",
-                        tint = tripleSeven,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = if (expanded) "Hide Receipt" else "View Receipt",
-                        color = tripleSeven,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp
                     )
@@ -281,13 +292,16 @@ fun OrderCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp)
-                            .background(Color(0xFFF9F9F9), RoundedCornerShape(8.dp))
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), 
+                                RoundedCornerShape(8.dp)
+                            )
                             .padding(10.dp)
                     ) {
                         Text(
                             text = order.receipt.trim(),
                             fontSize = 13.sp,
-                            color = Color(0xFF37474F),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 18.sp
                         )
                     }
@@ -295,16 +309,16 @@ fun OrderCard(
             }
 
             if (!order.approved) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 Row(
                     horizontalArrangement = Arrangement.End,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Button(
                         onClick = onReject,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF7043)),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                         modifier = Modifier.padding(end = 8.dp)
-                    ) { Text("Reject", color = Color.White) }
+                    ) { Text("Reject", color = MaterialTheme.colorScheme.onError) }
 
                     Button(
                         onClick = onApprove,

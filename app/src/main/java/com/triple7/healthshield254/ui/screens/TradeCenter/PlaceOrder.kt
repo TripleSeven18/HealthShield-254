@@ -11,31 +11,34 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddShoppingCart
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,12 +46,15 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.triple7.healthshield254.R
 import com.triple7.healthshield254.models.MedicineUpload
 import com.triple7.healthshield254.models.Order
+import com.triple7.healthshield254.navigation.ROUT_BOT_ENQUIRY
 import com.triple7.healthshield254.ui.theme.tripleSeven
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
@@ -112,10 +118,51 @@ class PlaceOrderViewModel : ViewModel() {
     }
 }
 
+/** --- REUSABLE FEATURE ICON --- **/
+@Composable
+fun FeatureIcon(
+    icon: ImageVector,
+    contentDescription: String?,
+    containerColor: Color = tripleSeven,
+    iconColor: Color = Color.White,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .padding(end = 6.dp)
+            .size(38.dp)
+            .drawBehind {
+                val tailPath = Path().apply {
+                    moveTo(size.width - 2.dp.toPx(), size.height * 0.35f)
+                    lineTo(size.width + 8.dp.toPx(), size.height * 0.5f)
+                    lineTo(size.width - 2.dp.toPx(), size.height * 0.65f)
+                    close()
+                }
+                drawPath(tailPath, color = containerColor)
+            }
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(containerColor.copy(alpha = 0.85f), containerColor)
+                ),
+                shape = CircleShape
+            )
+            .shadow(4.dp, CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = iconColor,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+}
+
 /** --- MAIN SCREEN --- **/
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaceOrderScreen(
+    navController: NavController,
     currentUserType: String,
     currentUserId: String,
     viewModel: PlaceOrderViewModel = viewModel()
@@ -187,6 +234,11 @@ fun PlaceOrderScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Place Order", color = Color.White) },
+                actions = {
+                    IconButton(onClick = { navController.navigate(ROUT_BOT_ENQUIRY) }) {
+                        FeatureIcon(icon = Icons.Default.SmartToy, contentDescription = "Ask Bot")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = tripleSeven)
             )
         }
@@ -336,11 +388,11 @@ fun ProductCard(
                 Text("Quantity:", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { if (quantity > 1) quantity-- }) {
-                        Icon(Icons.Default.Remove, contentDescription = "Decrease quantity")
+                        FeatureIcon(icon = Icons.Default.Remove, contentDescription = "Decrease quantity")
                     }
-                    Text(text = quantity.toString(), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(text = quantity.toString(), fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(horizontal = 12.dp))
                     IconButton(onClick = { quantity++ }) {
-                        Icon(Icons.Default.Add, contentDescription = "Increase quantity")
+                        FeatureIcon(icon = Icons.Default.Add, contentDescription = "Increase quantity")
                     }
                 }
             }
@@ -398,15 +450,15 @@ fun ProductCard(
             Button(
                 onClick = { showPaymentDialog = true },
                 enabled = !isPlacingOrder,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
+                modifier = Modifier.fillMaxWidth().height(54.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = tripleSeven)
             ) {
                 if (isPlacingOrder) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
                 } else {
-                    Icon(Icons.Default.AddShoppingCart, contentDescription = "Place Order", tint = Color.White)
-                    Spacer(Modifier.width(8.dp))
+                    FeatureIcon(icon = Icons.Default.AddShoppingCart, contentDescription = null, containerColor = Color.White, iconColor = tripleSeven)
+                    Spacer(Modifier.width(12.dp))
                     Text("Place Order", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
@@ -508,7 +560,7 @@ fun OrderConfirmationDialog(
                 Spacer(Modifier.height(16.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     Button(onClick = onDownloadPdf, colors = ButtonDefaults.buttonColors(containerColor = tripleSeven)) {
-                        Icon(Icons.Default.Download, contentDescription = "Download")
+                        FeatureIcon(icon = Icons.Default.Download, contentDescription = "Download", containerColor = Color.White, iconColor = tripleSeven)
                         Spacer(Modifier.width(8.dp))
                         Text("Download PDF", color = Color.White)
                     }
@@ -629,9 +681,10 @@ fun PreviewPlaceOrderScreen() {
 
     MaterialTheme {
         PlaceOrderScreen(
+            navController = rememberNavController(),
             currentUserType = "Customer",
             currentUserId = "PreviewUser",
-            viewModel = fakeViewModel as PlaceOrderViewModel // we can adjust the screen to accept a simpler interface for preview
+            viewModel = fakeViewModel as PlaceOrderViewModel
         )
     }
 }

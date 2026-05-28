@@ -1,3 +1,26 @@
 <resources>
     <string name="app_name">HealthShield254</string>
+    <string name="default_user_name">User</string>
+    <string name="good_morning">Good Morning</string>
+    <string name="good_afternoon">Good Afternoon</string>
+    <string name="good_evening">Good Evening</string>
+    <string name="hello_user">Hello, %1$s 👋</string>
+    <string name="notifications">Notifications</string>
+    <string name="scan_medicine">Scan Medicine</string>
+    <string name="your_profile">Your Profile</string>
+    <string name="profile_picture">Profile Picture</string>
+    <string name="hotspot_map_screen">HotspotMapScreen</string>
+    <string name="report_counterfeit">Report counterfeit</string>
+    <string name="medicine">Medicine</string>
+    <string name="profile_settings">Profile &amp; Settings</string>
+    <string name="place_order">Place Order</string>
+    <string name="supplier_manufacturer">Supplier Manufacturer</string>
+    <string name="analytics_screen">Analytics Screen</string>
+    <string name="chat_screen">ChatScreen</string>
+    <string name="consultation">Consultation</string>
+    <string name="bot_enquiry">Bot Enquiry</string>
+    <string name="important_notice">Important notice: Always check medicine authenticity before purchase!</string>
+    <string name="verification">Verification</string>
+    <string name="scan">Scan</string>
+    <string name="profile">Profile</string>
 </resources>
