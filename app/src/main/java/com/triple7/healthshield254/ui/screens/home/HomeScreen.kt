@@ -10,17 +10,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.rounded.QrCodeScanner
+import androidx.compose.material.icons.rounded.ShoppingCartCheckout
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -47,8 +51,11 @@ fun HomeScreen(navController: NavController) {
                 ?.replaceFirstChar { it.uppercase() }
     }
     val displayName = userName ?: stringResource(id = R.string.default_user_name)
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
 
     Scaffold(
+        containerColor = Color(0xFFF8F9FA),
         bottomBar = {
             HomeBottomNavigation(
                 navController = navController,
@@ -58,152 +65,159 @@ fun HomeScreen(navController: NavController) {
     ) { paddingValues ->
 
         val scrollState = rememberScrollState()
-        val gradientBrush = Brush.verticalGradient(
-            colors = listOf(tripleSeven.copy(alpha = 0.2f), Color.Transparent)
-        )
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(gradientBrush)
                 .padding(paddingValues)
                 .verticalScroll(scrollState)
-                .padding(16.dp)
         ) {
-
-            // --- Greeting Row ---
-            Row(
+            // --- ELONGATED HERO SECTION (3/4 of screen height) ---
+            // Removed shadow and Card to eliminate any white artifact behind the green section
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .height(screenHeight * 0.75f)
+                    .clip(RoundedCornerShape(bottomStart = 120.dp, bottomEnd = 20.dp))
+                    .background(tripleSeven)
             ) {
-                Column {
-                    val currentHour =
-                        java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
-                    val greetingText = when (currentHour) {
-                        in 0..12 -> stringResource(R.string.good_morning)
-                        in 12..15 -> stringResource(R.string.good_afternoon)
-                        else -> stringResource(R.string.good_evening)
-                    }
-
-                    Text(
-                        text = stringResource(R.string.hello_user, displayName),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-                    Text(
-                        text = greetingText,
-                        color = Color.Gray,
-                        fontSize = 14.sp
-                    )
-                }
-
-                IconButton(onClick = { /* navController.navigate(ROUT_NOTIFICATIONS) */ }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.medicalinsurance),
-                        contentDescription = stringResource(R.string.notifications),
-                        modifier = Modifier.size(28.dp),
-                        tint = Color.Unspecified
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // --- Scan Medicine Button ---
-            GradientButton(
-                text = stringResource(R.string.scan_medicine),
-                icon = Icons.Default.Info,
-                gradient = Brush.horizontalGradient(
-                    listOf(tripleSeven, tripleSeven.copy(alpha = 0.7f))
-                )
-            ) {
-                navController.navigate(ROUT_SCANMEDICINE)
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // --- Profile Section ---
-            Text(
-                stringResource(R.string.your_profile),
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                color = Color.DarkGray
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Row(
+                // Modern Physician Gradient
+                Box(
                     modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(tripleSeven, Color(0xFF002200))
+                            )
+                        )
+                )
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 24.dp, vertical = 40.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.profile),
-                        contentDescription = stringResource(R.string.profile_picture),
-                        modifier = Modifier
-                            .size(50.dp)
-                            .clip(RoundedCornerShape(25.dp))
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(displayName, fontWeight = FontWeight.Bold)
-                        user?.email?.let { Text(it, color = Color.Gray) }
+                    // 1. YOUR PROFILE & PERSONAL DETAILS
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(contentAlignment = Alignment.BottomEnd) {
+                            Image(
+                                painter = painterResource(id = R.drawable.profile),
+                                contentDescription = "Physician Profile",
+                                modifier = Modifier
+                                    .size(130.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White.copy(alpha = 0.1f))
+                                    .padding(4.dp)
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                            TailedDashboardIcon(
+                                icon = Icons.Default.Person,
+                                containerColor = Color.White,
+                                iconColor = tripleSeven,
+                                iconSize = 22.dp
+                            )
+                        }
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            text = "Dr. $displayName",
+                            color = Color.White,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = user?.email ?: "Medical Practitioner",
+                            color = Color.White.copy(alpha = 0.6f),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Surface(
+                            color = Color.White.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = "Verified Clinician Profile",
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    // 2. INTEGRATED ACTION PANEL (Scan + Order)
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        HeroCompactAction(
+                            title = "Authenticity Scanner",
+                            info = "AI-powered pharmaceutical verification",
+                            icon = Icons.Rounded.QrCodeScanner,
+                            onClick = { navController.navigate(ROUT_SCANMEDICINE) }
+                        )
+
+                        HeroCompactAction(
+                            title = "Inventory & Orders",
+                            info = "Procure from verified supply chains",
+                            icon = Icons.Rounded.ShoppingCartCheckout,
+                            onClick = { navController.navigate(ROUT_PLACEORDER) }
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // --- REMAINING DASHBOARD SERVICES ---
+            Spacer(modifier = Modifier.height(30.dp))
+            
+            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                Text(
+                    text = "Medical Services Hub",
+                    fontWeight = FontWeight.Black,
+                    fontSize = 22.sp,
+                    color = Color(0xFF2C3E50)
+                )
+                Spacer(modifier = Modifier.height(20.dp))
 
-            // --- Dashboard Items Grid ---
-            val impressiveColors = listOf(
-                Color(0xFF4A90E2), Color(0xFF50E3C2), Color(0xFFB8E986), Color(0xFFF5A623),
-                Color(0xFFF8E71C), Color(0xFF8B572A), Color(0xFF7ED321), Color(0xFF9013FE),
-                Color(0xFFE91E63), Color(0xFF009688)
-            )
+                val serviceColors = listOf(
+                    Color(0xFF3498DB), Color(0xFF2ECC71), Color(0xFFF1C40F), Color(0xFFE74C3C),
+                    Color(0xFF9B59B6), Color(0xFF1ABC9C), Color(0xFF27AE60),
+                    Color(0xFFE67E22), Color(0xFF34495E)
+                )
 
-            val dashboardItems = listOf(
-                Triple(R.string.hotspot_map_screen, R.drawable.hotspotmap, impressiveColors[0]),
-                Triple(R.string.report_counterfeit, R.drawable.reportcounterfeit, impressiveColors[1]),
-                Triple(R.string.medicine, R.drawable.medicine, impressiveColors[2]),
-                Triple(R.string.profile_settings, R.drawable.profile, impressiveColors[3]),
-                Triple(R.string.place_order, R.drawable.placeorder, impressiveColors[4]),
-                Triple(R.string.supplier_manufacturer, R.drawable.supplier, impressiveColors[5]),
-                Triple(R.string.analytics_screen, R.drawable.supplier, impressiveColors[6]),
-                Triple(R.string.chat_screen, R.drawable.supplier, impressiveColors[7]),
-                Triple(R.string.consultation, R.drawable.consultation, impressiveColors[8]),
-                Triple(R.string.bot_enquiry, R.drawable.verification, impressiveColors[9])
-            )
+                val dashboardItems = listOf(
+                    Triple(R.string.hotspot_map_screen, R.drawable.hotspotmap, serviceColors[0]),
+                    Triple(R.string.report_counterfeit, R.drawable.reportcounterfeit, serviceColors[1]),
+                    Triple(R.string.medicine, R.drawable.medicine, serviceColors[2]),
+                    Triple(R.string.profile_settings, R.drawable.profile, serviceColors[3]),
+                    Triple(R.string.supplier_manufacturer, R.drawable.supplier, serviceColors[4]),
+                    Triple(R.string.analytics_screen, R.drawable.supplier, serviceColors[5]),
+                    Triple(R.string.chat_screen, R.drawable.supplier, serviceColors[6]),
+                    Triple(R.string.consultation, R.drawable.consultation, serviceColors[7]),
+                    Triple(R.string.bot_enquiry, R.drawable.verification, serviceColors[8])
+                )
 
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                dashboardItems.chunked(3).forEach { rowItems ->
+                dashboardItems.chunked(3).forEach { row ->
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        rowItems.forEach { (titleRes, icon, color) ->
-                            DashboardCard(
-                                titleRes = titleRes,
+                        row.forEach { (name, icon, bgColor) ->
+                            ServiceCard(
+                                titleRes = name,
                                 iconRes = icon,
-                                color = color,
+                                color = bgColor,
                                 modifier = Modifier.weight(1f)
                             ) {
-                                when (titleRes) {
+                                when (name) {
                                     R.string.hotspot_map_screen -> navController.navigate(ROUT_HOTSPOTMAP)
                                     R.string.report_counterfeit -> navController.navigate(ROUT_SENDREPORT)
                                     R.string.medicine -> navController.navigate(ROUT_VIEW_MEDICINES)
                                     R.string.profile_settings -> navController.navigate(ROUT_PROFILESETTINS)
-                                    R.string.place_order -> navController.navigate(ROUT_PLACEORDER)
                                     R.string.supplier_manufacturer -> navController.navigate(ROUT_SUPPLIERMANUFACTURER)
                                     R.string.analytics_screen -> navController.navigate(ROUT_ANALYTICSSCREEN)
                                     R.string.chat_screen -> navController.navigate(ROUT_CHATBOARDSCREEN)
@@ -212,79 +226,132 @@ fun HomeScreen(navController: NavController) {
                                 }
                             }
                         }
-                        // Add empty boxes if the row is not full to maintain alignment
-                        if (rowItems.size < 3) {
-                            repeat(3 - rowItems.size) {
-                                Spacer(modifier = Modifier.weight(1f))
-                            }
-                        }
+                        if (row.size < 3) repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // --- Notice Banner ---
+            Spacer(modifier = Modifier.height(20.dp))
             MarqueeText(stringResource(R.string.important_notice))
+            Spacer(modifier = Modifier.height(50.dp))
         }
     }
 }
 
 @Composable
-fun DashboardCard(titleRes: Int, iconRes: Int, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val title = stringResource(id = titleRes)
-    Card(
-        modifier = modifier
-            .aspectRatio(1f)
-            .clickable { onClick() }
-            .shadow(4.dp, CircleShape),
-        colors = CardDefaults.cardColors(containerColor = color),
-        shape = CircleShape
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(8.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = iconRes),
-                    contentDescription = title,
-                    modifier = Modifier.size(28.dp),
-                    tint = Color.White
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = title,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 10.sp,
-                    lineHeight = 11.sp,
-                    textAlign = TextAlign.Center,
-                    maxLines = 2
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun GradientButton(text: String, icon: ImageVector, gradient: Brush, onClick: () -> Unit) {
+fun HeroCompactAction(
+    title: String,
+    info: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp)
-            .clip(RoundedCornerShape(28.dp))
-            .background(gradient)
+            .clip(RoundedCornerShape(25.dp))
+            .background(Color.White.copy(alpha = 0.12f))
+            .clickable { onClick() }
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TailedDashboardIcon(
+                icon = icon,
+                containerColor = Color.White,
+                iconColor = tripleSeven,
+                iconSize = 24.dp
+            )
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+                Text(info, color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
+            }
+            Icon(
+                painter = painterResource(id = R.drawable.ic_eye_open),
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.4f),
+                modifier = Modifier.size(16.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun TailedDashboardIcon(
+    icon: ImageVector,
+    containerColor: Color,
+    iconColor: Color,
+    iconSize: androidx.compose.ui.unit.Dp,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .size(iconSize)
+            .drawBehind {
+                val r = size.width / 2
+                val cx = size.width / 2
+                val cy = size.height / 2
+                
+                val path = Path().apply {
+                    val startAngle = Math.toRadians(310.0)
+                    val x1 = (cx + r * Math.cos(startAngle)).toFloat()
+                    val y1 = (cy + r * Math.sin(startAngle)).toFloat()
+                    
+                    moveTo(x1, y1)
+                    lineTo(size.width * 1.5f, y1 - 4.dp.toPx())
+                    
+                    val endAngle = Math.toRadians(350.0)
+                    val x2 = (cx + r * Math.cos(endAngle)).toFloat()
+                    val y2 = (cy + r * Math.sin(endAngle)).toFloat()
+                    lineTo(x2, y2)
+                    close()
+                }
+                drawPath(path, color = containerColor)
+            }
+            .background(containerColor, CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = iconColor,
+            modifier = Modifier.size(iconSize * 0.6f)
+        )
+    }
+}
+
+@Composable
+fun ServiceCard(titleRes: Int, iconRes: Int, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val title = stringResource(id = titleRes)
+    Box(
+        modifier = modifier
+            .aspectRatio(1.1f)
+            .clip(RoundedCornerShape(22.dp))
+            .background(color)
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = text, tint = Color.White)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text, color = Color.White, fontWeight = FontWeight.Bold)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(6.dp)
+        ) {
+            Icon(
+                painter = painterResource(id = iconRes),
+                contentDescription = title,
+                modifier = Modifier.size(24.dp),
+                tint = Color.White
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = title,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 10.sp,
+                lineHeight = 11.sp,
+                textAlign = TextAlign.Center,
+                maxLines = 2
+            )
         }
     }
 }
@@ -302,31 +369,24 @@ fun MarqueeText(text: String) {
         label = "translateX"
     )
 
-    Card(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(40.dp)
-            .padding(horizontal = 8.dp)
-            .shadow(4.dp, RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFC107))
+            .height(44.dp)
+            .padding(horizontal = 10.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(Color(0xFFFFC107)),
+        contentAlignment = Alignment.CenterStart
     ) {
-        Box(
+        Text(
+            text = text,
             modifier = Modifier
-                .fillMaxSize()
-                .clip(RoundedCornerShape(16.dp)),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Text(
-                text = text,
-                modifier = Modifier
-                    .offset { IntOffset(translateX.roundToInt(), 0) }
-                    .padding(horizontal = 16.dp),
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                fontSize = 14.sp
-            )
-        }
+                .offset { IntOffset(translateX.roundToInt(), 0) }
+                .padding(horizontal = 20.dp),
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            fontSize = 14.sp
+        )
     }
 }
 
@@ -335,39 +395,45 @@ fun HomeBottomNavigation(
     navController: NavController,
     onProfileClick: () -> Unit
 ) {
-    NavigationBar(containerColor = tripleSeven) {
+    NavigationBar(containerColor = tripleSeven, tonalElevation = 0.dp) {
         NavigationBarItem(
             icon = {
                 Icon(
                     painter = painterResource(id = R.drawable.verification),
-                    contentDescription = stringResource(R.string.verification),
-                    modifier = Modifier.size(30.dp)
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
                 )
             },
+            label = { Text("Reports", fontSize = 10.sp, color = Color.White) },
             selected = false,
-            onClick = { navController.navigate(ROUT_VIEWREPORT) }
+            onClick = { navController.navigate(ROUT_VIEWREPORT) },
+            colors = NavigationBarItemDefaults.colors(unselectedTextColor = Color.White)
         )
         NavigationBarItem(
             icon = {
                 Icon(
                     painter = painterResource(id = R.drawable.scan),
-                    contentDescription = stringResource(R.string.scan),
-                    modifier = Modifier.size(30.dp)
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
                 )
             },
+            label = { Text("Scanner", fontSize = 10.sp, color = Color.White) },
             selected = false,
-            onClick = { navController.navigate(ROUT_SCANMEDICINE) }
+            onClick = { navController.navigate(ROUT_SCANMEDICINE) },
+            colors = NavigationBarItemDefaults.colors(unselectedTextColor = Color.White)
         )
         NavigationBarItem(
             icon = {
                 Icon(
                     imageVector = Icons.Default.Person,
-                    contentDescription = stringResource(R.string.profile),
-                    modifier = Modifier.size(30.dp)
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
                 )
             },
+            label = { Text("Account", fontSize = 10.sp, color = Color.White) },
             selected = false,
-            onClick = { onProfileClick() }
+            onClick = { onProfileClick() },
+            colors = NavigationBarItemDefaults.colors(unselectedTextColor = Color.White)
         )
     }
 }

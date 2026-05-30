@@ -6,6 +6,7 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
+import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -21,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -50,13 +52,16 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.database.*
+import com.google.firebase.storage.FirebaseStorage
 import com.triple7.healthshield254.R
 import com.triple7.healthshield254.models.MedicineUpload
 import com.triple7.healthshield254.models.Order
 import com.triple7.healthshield254.navigation.ROUT_BOT_ENQUIRY
 import com.triple7.healthshield254.ui.theme.tripleSeven
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.text.NumberFormat
@@ -129,13 +134,28 @@ fun FeatureIcon(
 ) {
     Box(
         modifier = modifier
-            .padding(end = 6.dp)
+            .padding(end = 10.dp, top = 2.dp)
             .size(38.dp)
             .drawBehind {
                 val tailPath = Path().apply {
-                    moveTo(size.width - 2.dp.toPx(), size.height * 0.35f)
-                    lineTo(size.width + 8.dp.toPx(), size.height * 0.5f)
-                    lineTo(size.width - 2.dp.toPx(), size.height * 0.65f)
+                    // Tail starts at top-right of the circle and points right
+                    val r = size.width / 2
+                    val centerX = size.width / 2
+                    val centerY = size.height / 2
+                    
+                    // Angle for top-right (approx 315 degrees)
+                    val startAngle = Math.toRadians(310.0)
+                    val x1 = (centerX + r * Math.cos(startAngle)).toFloat()
+                    val y1 = (centerY + r * Math.sin(startAngle)).toFloat()
+                    
+                    moveTo(x1, y1)
+                    // Point to the right side of the app
+                    lineTo(size.width + 10.dp.toPx(), y1 - 4.dp.toPx())
+                    // Return to circle at a lower point
+                    val endAngle = Math.toRadians(350.0)
+                    val x2 = (centerX + r * Math.cos(endAngle)).toFloat()
+                    val y2 = (centerY + r * Math.sin(endAngle)).toFloat()
+                    lineTo(x2, y2)
                     close()
                 }
                 drawPath(tailPath, color = containerColor)
@@ -146,7 +166,7 @@ fun FeatureIcon(
                 ),
                 shape = CircleShape
             )
-            .shadow(4.dp, CircleShape),
+            .shadow(2.dp, CircleShape),
         contentAlignment = Alignment.Center
     ) {
         Icon(
@@ -155,6 +175,90 @@ fun FeatureIcon(
             tint = iconColor,
             modifier = Modifier.size(20.dp)
         )
+    }
+}
+
+/** --- USER PROFILE SECTION --- **/
+@Composable
+fun UserProfileSection(
+    user: com.google.firebase.auth.FirebaseUser?,
+    photoUrl: String?,
+    onUpdatePhoto: (Uri) -> Unit,
+    onDeletePhoto: () -> Unit
+) {
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { onUpdatePhoto(it) }
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(contentAlignment = Alignment.BottomEnd) {
+                Image(
+                    painter = rememberAsyncImagePainter(
+                        model = photoUrl ?: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                    ),
+                    contentDescription = "User Profile",
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(CircleShape)
+                        .clickable { launcher.launch("image/*") },
+                    contentScale = ContentScale.Crop
+                )
+                
+                Surface(
+                    shape = CircleShape,
+                    color = tripleSeven,
+                    modifier = Modifier
+                        .size(20.dp)
+                        .offset(x = 2.dp, y = 2.dp)
+                        .clickable { launcher.launch("image/*") }
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Edit,
+                        contentDescription = "Edit photo",
+                        tint = Color.White,
+                        modifier = Modifier.padding(4.dp)
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = user?.displayName ?: user?.email?.substringBefore("@")?.replaceFirstChar { it.uppercase() } ?: "Guest User",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = Color.Black
+                )
+                Text(
+                    text = user?.email ?: "Sign in to track orders",
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+            }
+            
+            if (photoUrl != null && !photoUrl.contains("cdn-icons-png.flaticon.com")) {
+                IconButton(onClick = onDeletePhoto) {
+                    Icon(
+                        imageVector = Icons.Rounded.Delete,
+                        contentDescription = "Delete Photo",
+                        tint = Color.Red.copy(alpha = 0.6f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -172,6 +276,8 @@ fun PlaceOrderScreen(
     val isPreview = LocalInspectionMode.current
 
     val user = if (isPreview) null else FirebaseAuth.getInstance().currentUser
+    var userPhotoUrl by remember(user) { mutableStateOf(user?.photoUrl?.toString()) }
+    
     val userName = remember(user) {
         user?.displayName?.takeIf { it.isNotBlank() }
             ?: user?.email?.substringBefore("@")?.replaceFirstChar { it.uppercase() }
@@ -233,10 +339,15 @@ fun PlaceOrderScreen(
         containerColor = Color(0xFFF8F9FA),
         topBar = {
             TopAppBar(
-                title = { Text("Place Order", color = Color.White) },
+                title = { Text("Place Order", color = Color.White, fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        FeatureIcon(icon = Icons.Rounded.ArrowBack, contentDescription = "Back")
+                    }
+                },
                 actions = {
                     IconButton(onClick = { navController.navigate(ROUT_BOT_ENQUIRY) }) {
-                        FeatureIcon(icon = Icons.Default.SmartToy, contentDescription = "Ask Bot")
+                        FeatureIcon(icon = Icons.Rounded.SmartToy, contentDescription = "Ask Bot")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = tripleSeven)
@@ -261,6 +372,47 @@ fun PlaceOrderScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
+                        // User Profile Section added at the top
+                        item {
+                            UserProfileSection(
+                                user = user,
+                                photoUrl = userPhotoUrl,
+                                onUpdatePhoto = { uri ->
+                                    coroutineScope.launch {
+                                        try {
+                                            val storageRef = FirebaseStorage.getInstance().reference
+                                                .child("profile_pictures/${user?.uid}.jpg")
+                                            storageRef.putFile(uri).await()
+                                            val downloadUrl = storageRef.downloadUrl.await()
+                                            
+                                            val profileUpdates = UserProfileChangeRequest.Builder()
+                                                .setPhotoUri(downloadUrl)
+                                                .build()
+                                            user?.updateProfile(profileUpdates)?.await()
+                                            userPhotoUrl = downloadUrl.toString()
+                                            Toast.makeText(context, "Profile photo updated!", Toast.LENGTH_SHORT).show()
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "Update failed: ${e.message}", Toast.LENGTH_LONG).show()
+                                        }
+                                    }
+                                },
+                                onDeletePhoto = {
+                                    coroutineScope.launch {
+                                        try {
+                                            val profileUpdates = UserProfileChangeRequest.Builder()
+                                                .setPhotoUri(null)
+                                                .build()
+                                            user?.updateProfile(profileUpdates)?.await()
+                                            userPhotoUrl = null
+                                            Toast.makeText(context, "Profile photo removed!", Toast.LENGTH_SHORT).show()
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "Deletion failed: ${e.message}", Toast.LENGTH_LONG).show()
+                                        }
+                                    }
+                                }
+                            )
+                        }
+
                         items(products, key = { it.id ?: UUID.randomUUID().toString() }) { product ->
                             ProductCard(
                                 product = product,
@@ -388,11 +540,11 @@ fun ProductCard(
                 Text("Quantity:", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { if (quantity > 1) quantity-- }) {
-                        FeatureIcon(icon = Icons.Default.Remove, contentDescription = "Decrease quantity")
+                        FeatureIcon(icon = Icons.Rounded.Remove, contentDescription = "Decrease quantity")
                     }
                     Text(text = quantity.toString(), fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(horizontal = 12.dp))
                     IconButton(onClick = { quantity++ }) {
-                        FeatureIcon(icon = Icons.Default.Add, contentDescription = "Increase quantity")
+                        FeatureIcon(icon = Icons.Rounded.Add, contentDescription = "Increase quantity")
                     }
                 }
             }
@@ -457,7 +609,7 @@ fun ProductCard(
                 if (isPlacingOrder) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
                 } else {
-                    FeatureIcon(icon = Icons.Default.AddShoppingCart, contentDescription = null, containerColor = Color.White, iconColor = tripleSeven)
+                    FeatureIcon(icon = Icons.Rounded.ShoppingCartCheckout, contentDescription = null, containerColor = Color.White, iconColor = tripleSeven)
                     Spacer(Modifier.width(12.dp))
                     Text("Place Order", color = Color.White, fontWeight = FontWeight.Bold)
                 }
@@ -492,7 +644,13 @@ fun PaymentGatewayDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Confirm Payment via $paymentMethod") },
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                FeatureIcon(icon = Icons.Rounded.Payments, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Payment via $paymentMethod")
+            }
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Please confirm the details below to proceed with your payment to HealthShield254.")
@@ -504,20 +662,21 @@ fun PaymentGatewayDialog(
 
                 when {
                     paymentMethod.contains("M-Pesa") || paymentMethod.contains("Airtel Money") -> {
-                        Text("Enter your mobile number to receive a payment prompt. You will be asked to enter your PIN to authorize the payment.")
+                        Text("Enter your mobile number to receive a payment prompt.")
                         OutlinedTextField(
                             value = paymentDetail,
                             onValueChange = { paymentDetail = it },
                             label = { Text("Phone Number (e.g. 07...)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                            singleLine = true
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                     paymentMethod.contains("Bank") -> {
-                        Text("You will be redirected to your bank's portal to complete the payment of $formattedPrice.")
+                        Text("You will be redirected to your bank's portal to complete the payment.")
                     }
                     else -> {
-                        Text("You will be redirected to $paymentMethod to complete the payment of $formattedPrice.")
+                        Text("You will be redirected to $paymentMethod to complete the payment.")
                     }
                 }
             }
@@ -525,7 +684,7 @@ fun PaymentGatewayDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    Toast.makeText(context, "Initiating payment... Please check your phone for STK push.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Initiating payment... Please check your phone.", Toast.LENGTH_LONG).show()
                     onConfirmPayment(paymentDetail)
                 },
                 enabled = isPaymentDetailValid,
@@ -553,18 +712,30 @@ fun OrderConfirmationDialog(
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(shape = RoundedCornerShape(16.dp), tonalElevation = 12.dp) {
-            Column(Modifier.padding(16.dp)) {
-                Text("Order Confirmed!", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = tripleSeven)
-                Spacer(Modifier.height(12.dp))
-                Text(receipt, fontSize = 14.sp)
+            Column(Modifier.padding(20.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    FeatureIcon(icon = Icons.Rounded.CheckCircle, contentDescription = null, containerColor = Color(0xFF4CAF50))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Order Confirmed!", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF2E7D32))
+                }
                 Spacer(Modifier.height(16.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Button(onClick = onDownloadPdf, colors = ButtonDefaults.buttonColors(containerColor = tripleSeven)) {
-                        FeatureIcon(icon = Icons.Default.Download, contentDescription = "Download", containerColor = Color.White, iconColor = tripleSeven)
+                Text(receipt, fontSize = 14.sp, color = Color.DarkGray)
+                Spacer(Modifier.height(20.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(
+                        onClick = onDownloadPdf,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = tripleSeven)
+                    ) {
+                        FeatureIcon(icon = Icons.Rounded.ReceiptLong, contentDescription = "Receipt", containerColor = Color.White, iconColor = tripleSeven)
                         Spacer(Modifier.width(8.dp))
-                        Text("Download PDF", color = Color.White)
+                        Text("Receipt", color = Color.White)
                     }
-                    Button(onClick = onDismiss, colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)) {
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(0.6f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                    ) {
                         Text("Close", color = Color.White)
                     }
                 }
@@ -636,6 +807,7 @@ fun createPdfWithWatermark(context: Context, receipt: String): ByteArray {
     pdfDocument.close()
     return outputStream.toByteArray()
 }
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewPlaceOrderScreen() {
@@ -652,23 +824,9 @@ fun PreviewPlaceOrderScreen() {
             price = "50",
             uploaderName = "Pharmacy A",
             imageUrls = listOf()
-        ),
-        MedicineUpload(
-            id = "2",
-            name = "Amoxicillin",
-            description = "Antibiotic",
-            brand = "BioPharma",
-            category = "Antibiotic",
-            dosage = "250mg",
-            sideEffects = "Nausea",
-            warnings = "Finish full course",
-            price = "120",
-            uploaderName = "Pharmacy B",
-            imageUrls = listOf()
         )
     )
 
-    // Instead of subclassing, just use a simple holder with State
     val productsState = remember { mutableStateOf(mockProducts) }
     val loadingState = remember { mutableStateOf(false) }
     val errorState = remember { mutableStateOf<String?>(null) }
